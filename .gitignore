@@ -1,0 +1,13 @@
+# Node
+node_modules/
+.env
+
+# Vite/CRA build
+dist/
+build/
+
+# Mac / Windows
+.DS_Store
+Thumbs.db
+
+MEMO.md
