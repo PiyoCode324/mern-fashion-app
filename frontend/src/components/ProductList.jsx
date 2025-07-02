@@ -8,6 +8,7 @@ const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState("all");
 
+  // 📦 Fetch product data from the backend API
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products`)
@@ -15,8 +16,10 @@ const ProductList = () => {
       .catch((err) => console.error(err));
   }, []);
 
+  // 🗂️ Define available product categories
   const categories = ["all", "tops", "bottoms", "accessory", "hat", "bag"];
 
+  // 🔍 Filter products by selected category
   const filteredProducts =
     category === "all"
       ? products
@@ -24,6 +27,7 @@ const ProductList = () => {
 
   return (
     <div className="p-4">
+      {/* 🔘 Category filter buttons */}
       <div className="flex flex-wrap gap-2 mb-4">
         {categories.map((cat) => (
           <button
@@ -38,6 +42,7 @@ const ProductList = () => {
         ))}
       </div>
 
+      {/* 🛍️ Display the list of filtered products */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredProducts.map((product) => (
           <Link key={product._id} to={`/products/${product._id}`}>

@@ -37,14 +37,14 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
-// POSTで商品を追加するAPI
+// 商品を追加するAPI
 app.post("/api/products", async (req, res) => {
   try {
     const product = new Product(req.body);
     const savedProduct = await product.save();
     res.status(201).json(savedProduct);
   } catch (err) {
-    console.error(err);
+    console.error("Error saving product:", err.message, err.errors);
     res.status(500).json({ message: "Error saving product" });
   }
 });
@@ -60,6 +60,30 @@ app.get("/api/products/:id", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// 商品情報を更新するAPI
+app.put("/api/products/:id", async (req, res) => {
+  try {
+    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error updating product" });
+  }
+});
+
+// 商品を削除するAPI
+app.delete("/api/products/:id", async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: "商品を削除しました" });
+  } catch (error) {
+    res.status(500).json({ message: "削除に失敗しました" });
   }
 });
 

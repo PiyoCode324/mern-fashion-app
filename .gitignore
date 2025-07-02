@@ -1,6 +1,7 @@
 # Node
 node_modules/
 .env
+.env.development.local
 
 # Vite/CRA build
 dist/
@@ -11,3 +12,6 @@ build/
 Thumbs.db
 
 MEMO.md
+面談練習.md
+日誌.md
+スケジュール.md
