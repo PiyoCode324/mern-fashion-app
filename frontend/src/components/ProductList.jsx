@@ -1,14 +1,14 @@
 // src/components/ProductList.jsx
 import { Link } from "react-router-dom";
-import ProductCard from "./ProductCard";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import ProductCard from "./ProductCard"; // ⭐ ProductCard を使う
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState("all");
 
-  // 📦 Fetch product data from the backend API
+  // 📦 バックエンドAPIから商品データを取得
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products`)
@@ -16,10 +16,10 @@ const ProductList = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  // 🗂️ Define available product categories
+  // 🗂️ 商品カテゴリ一覧
   const categories = ["all", "tops", "bottoms", "accessory", "hat", "bag"];
 
-  // 🔍 Filter products by selected category
+  // 🔍 選択されたカテゴリに基づいて商品をフィルタリング
   const filteredProducts =
     category === "all"
       ? products
@@ -27,7 +27,7 @@ const ProductList = () => {
 
   return (
     <div className="p-4">
-      {/* 🔘 Category filter buttons */}
+      {/* 🔘 カテゴリフィルターのボタン */}
       <div className="flex flex-wrap gap-2 mb-4">
         {categories.map((cat) => (
           <button
@@ -42,7 +42,7 @@ const ProductList = () => {
         ))}
       </div>
 
-      {/* 🛍️ Display the list of filtered products */}
+      {/* 🛍️ 商品一覧の表示 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredProducts.map((product) => (
           <Link key={product._id} to={`/products/${product._id}`}>

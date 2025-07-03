@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useFavorite } from "../contexts/FavoriteContext"; // ❤️追加
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate(); // ←追加
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // バックエンドから商品情報を取得
+  const { isFavorite, toggleFavorite } = useFavorite(); // ❤️追加
+
+  // 商品情報を取得
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products/${id}`)
@@ -30,7 +33,7 @@ export default function ProductDetail() {
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/products/${id}`);
       alert("商品を削除しました");
-      navigate("/"); // 商品一覧へリダイレクト
+      navigate("/");
     } catch (err) {
       console.error("削除エラー:", err);
       alert("削除に失敗しました");
@@ -40,12 +43,27 @@ export default function ProductDetail() {
   if (loading) return <p>読み込み中...</p>;
   if (error) return <p>{error}</p>;
 
+  const favorite = isFavorite(product._id); // ❤️追加
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <Link to="/" className="text-indigo-600 underline mb-4 inline-block">
         ← 商品一覧に戻る
       </Link>
-      <div className="border rounded p-4 shadow">
+      <div className="border rounded p-4 shadow relative">
+        {/* ❤️ ハートボタン */}
+        <button
+          onClick={() => toggleFavorite(product._id)}
+          className={`absolute top-4 right-4 text-2xl transition-transform duration-300 ${
+            favorite
+              ? "text-red-500 scale-110"
+              : "text-gray-300 hover:scale-110"
+          }`}
+          aria-label="お気に入り"
+        >
+          {favorite ? "❤️" : "🤍"}
+        </button>
+
         <img
           src={product.imageUrl}
           alt={product.name}
@@ -56,7 +74,6 @@ export default function ProductDetail() {
         <p className="text-indigo-700 text-xl font-semibold mb-4">
           {product.price} 円
         </p>
-        {/* 👇 説明欄を追加 */}
         {product.description && (
           <p className="text-gray-800 whitespace-pre-line">
             {product.description}
@@ -68,7 +85,6 @@ export default function ProductDetail() {
         >
           編集する
         </Link>
-        {/* 🔻 削除ボタン追加 */}
         <button
           onClick={handleDelete}
           className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"

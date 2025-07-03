@@ -3,34 +3,39 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+// Add Product Page Components
 const AddProduct = () => {
+  // Manages the form state (default is blank)
   const [form, setForm] = useState({
     name: "",
     category: "",
     description: "",
-    // 変更点: image を imageUrl に変更
     imageUrl: "",
     price: "",
   });
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // For page transitions
 
+  // Update state when form input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // What happens when a form is submitted
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
 
     try {
-      // priceを数値に変換して送信
+      // Convert the 'price' string to a number (Mongoose uses Number type).
       const submitData = {
         ...form,
         price: Number(form.price),
       };
 
-      // 環境変数VITE_API_URLが正しく設定されていることを確認してください
+      // Sending product data in a POST request
       await axios.post(`${import.meta.env.VITE_API_URL}/products`, submitData);
+
+      // After successful registration, user will be redirected to the product list page.
       navigate("/");
     } catch (err) {
       console.error("登録エラー:", err);
@@ -41,7 +46,10 @@ const AddProduct = () => {
   return (
     <div className="max-w-md mx-auto p-4">
       <h2 className="text-xl font-bold mb-4">新しい商品を追加</h2>
+
+      {/* Form Body */}
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Enter the product name */}
         <input
           type="text"
           name="name"
@@ -51,6 +59,8 @@ const AddProduct = () => {
           className="w-full p-2 border rounded"
           required
         />
+
+        {/* Select a category */}
         <select
           name="category"
           value={form.category}
@@ -65,6 +75,8 @@ const AddProduct = () => {
           <option value="hat">帽子</option>
           <option value="bag">バッグ</option>
         </select>
+
+        {/* Product Description */}
         <textarea
           name="description"
           placeholder="説明"
@@ -72,15 +84,19 @@ const AddProduct = () => {
           onChange={handleChange}
           className="w-full p-2 border rounded"
         />
+
+        {/* Enter image URL */}
         <input
           type="text"
-          name="imageUrl" // 変更点: name を imageUrl に変更
+          name="imageUrl"
           placeholder="画像URL"
-          value={form.imageUrl} // 変更点: value も imageUrl に変更
+          value={form.imageUrl}
           onChange={handleChange}
           className="w-full p-2 border rounded"
           required
         />
+
+        {/* Entering prices */}
         <input
           type="number"
           name="price"
@@ -91,6 +107,8 @@ const AddProduct = () => {
           required
           min="0"
         />
+
+        {/* Registration button */}
         <button
           type="submit"
           className="w-full bg-indigo-600 text-white py-2 rounded"
