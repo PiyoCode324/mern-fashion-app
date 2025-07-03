@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 const Cart = () => {
   const { cartItems, addToCart, removeFromCart, clearCart } = useCart();
 
-  // 合計金額を quantity を考慮して計算
+  // Calculate the total price including the quantity of each item.
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -26,7 +26,7 @@ const Cart = () => {
                 key={index}
                 className="py-4 flex items-center justify-between gap-4"
               >
-                {/* 商品情報（画像＋詳細＋数量） */}
+                {/* Product information: image, details, and quantity. */}
                 <div className="flex items-center gap-4 flex-1">
                   <img
                     src={item.imageUrl}
@@ -47,7 +47,7 @@ const Cart = () => {
                   </div>
                 </div>
 
-                {/* 数量調整ボタン */}
+                {/* Buttons to adjust the quantity of the item. */}
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={() => addToCart(item)}
@@ -68,7 +68,7 @@ const Cart = () => {
             ))}
           </ul>
 
-          {/* 合計金額とアクション */}
+          {/* Total amount and action buttons */}
           <div className="text-right mb-4">
             <p className="text-lg font-semibold">
               合計金額：¥{total.toLocaleString()}

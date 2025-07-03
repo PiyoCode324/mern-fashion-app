@@ -1,10 +1,10 @@
 // src/contexts/CartContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 
-// Contextの作成
+// Create a Context for the cart
 const CartContext = createContext(null);
 
-// カスタムフック
+// Custom Hook for accessing the cart context
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -13,7 +13,7 @@ export const useCart = () => {
   return context;
 };
 
-// Providerコンポーネント
+// CartProvider component that wraps the application
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
     try {
@@ -25,50 +25,51 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  // 保存：cartItemsが変わるたびにlocalStorageへ保存
+  // Save the cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // 商品をカートに追加（数量管理対応）
+  // Add a product to the cart (increment quantity if already exists)
   const addToCart = (product) => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item._id === product._id);
       if (existingItem) {
-        // すでにあれば数量だけ増やす
+        // If the item is already in the cart, increase its quantity
         return prev.map((item) =>
           item._id === product._id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        // 新規追加は quantity 1 で追加
+        // If it's a new item, add it with quantity 1
         return [...prev, { ...product, quantity: 1 }];
       }
     });
   };
 
-  // 商品をカートから削除（quantityが1以上なら減らす、1なら削除）
+  // Remove a product from the cart
+  // If quantity > 1, decrement it; otherwise, remove the item completely
   const removeFromCart = (productId) => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item._id === productId);
       if (!existingItem) return prev;
 
       if (existingItem.quantity > 1) {
-        // 数量を1減らす
+        // Decrease quantity by 1
         return prev.map((item) =>
           item._id === productId
             ? { ...item, quantity: item.quantity - 1 }
             : item
         );
       } else {
-        // quantityが1なら完全に削除
+        // If quantity is 1, remove the item completely
         return prev.filter((item) => item._id !== productId);
       }
     });
   };
 
-  // カートを空にする
+  // Clear all items from the cart
   const clearCart = () => setCartItems([]);
 
   return (
