@@ -2,18 +2,46 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const path = require("path");
+const fs = require("fs");
+const admin = require("firebase-admin");
+
+// Renderなどクラウド環境対応でサービスアカウントキーをセットアップ
+const serviceAccountPath = path.resolve("./serviceAccountKey.json");
+
+if (!fs.existsSync(serviceAccountPath)) {
+  // 環境変数からBase64で受け取った文字列を復元しファイル作成
+  const base64Key = process.env.SERVICE_ACCOUNT_KEY_BASE64;
+  if (!base64Key) {
+    throw new Error(
+      "サービスアカウントキーが見つかりません。環境変数を設定してください。"
+    );
+  }
+  const json = Buffer.from(base64Key, "base64").toString("utf8");
+  fs.writeFileSync(serviceAccountPath, json);
+}
+
+const serviceAccount = require(serviceAccountPath);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
+
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "https://mern-fashion-app-frontend.onrender.com",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
 );
+
 app.use(express.json());
 
 const Product = require("./models/Product"); // mongooseのモデル
@@ -86,6 +114,9 @@ app.delete("/api/products/:id", async (req, res) => {
     res.status(500).json({ message: "削除に失敗しました" });
   }
 });
+
+// ユーザー関連APIルートを登録
+app.use("/api/users", userRoutes);
 
 // サーバー起動
 const PORT = process.env.PORT || 5000;

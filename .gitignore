@@ -11,6 +11,10 @@ build/
 .DS_Store
 Thumbs.db
 
+# Firebase Admin SDK サービスアカウント鍵ファイル
+/serviceAccountKey.json
+encoded.txt
+
 MEMO.md
 面談練習.md
 日誌.md

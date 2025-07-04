@@ -12,6 +12,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Firebase アプリ初期化
 const app = initializeApp(firebaseConfig);
+
+// Firebase Auth インスタンス取得
 export const auth = getAuth(app);
+
 export default app;
