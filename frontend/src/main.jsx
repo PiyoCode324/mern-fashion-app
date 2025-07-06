@@ -5,6 +5,8 @@ import { BrowserRouter } from "react-router-dom";
 import { FavoriteProvider } from "./contexts/FavoriteContext";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext"; // AuthProvider をインポート
+import { ToastContainer } from "react-toastify"; // ← 追加
+import "react-toastify/dist/ReactToastify.css"; // ← 追加
 import "./index.css";
 import App from "./App.jsx";
 
@@ -21,6 +23,7 @@ createRoot(document.getElementById("root")).render(
           <AuthProvider>
             {/* メインのアプリケーションコンポーネント */}
             <App />
+            <ToastContainer />
           </AuthProvider>
         </CartProvider>
       </BrowserRouter>

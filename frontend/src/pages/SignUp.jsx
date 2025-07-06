@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const SignUp = () => {
+  const [name, setName] = useState(""); // 名前入力用
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,6 +16,12 @@ const SignUp = () => {
     e.preventDefault();
     setError("");
 
+    // 🔽 クライアント側でのパスワード長チェック
+    if (password.length < 6) {
+      setError("パスワードは6文字以上で入力してください。");
+      return;
+    }
+
     try {
       // Firebase Auth でアカウント作成
       const userCredential = await createUserWithEmailAndPassword(
@@ -21,6 +29,9 @@ const SignUp = () => {
         email,
         password
       );
+
+      // 🔽 Firebase に displayName を保存
+      await updateProfile(userCredential.user, { displayName: name });
 
       const user = userCredential.user;
       const token = await user.getIdToken();
@@ -45,11 +56,14 @@ const SignUp = () => {
     } catch (err) {
       console.error("登録エラー:", err);
       if (err.response?.status === 409) {
-        setError(err.response.data.message); // 🟡 サーバーのメッセージを画面に表示
+        setError(err.response.data.message);
       } else if (err.code === "auth/email-already-in-use") {
         setError("このメールアドレスは既に使用されています。");
       } else {
         setError("登録に失敗しました。もう一度お試しください。");
+        toast.error(
+          "サーバーエラーが発生しました。しばらくしてから再度お試しください。"
+        );
       }
     }
   };
@@ -61,6 +75,16 @@ const SignUp = () => {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <form onSubmit={handleSignUp} className="space-y-4">
+        <div>
+          <label className="block">名前</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full border border-gray-300 p-2 rounded"
+          />
+        </div>
         <div>
           <label className="block">メールアドレス</label>
           <input
@@ -81,6 +105,11 @@ const SignUp = () => {
             required
             className="w-full border border-gray-300 p-2 rounded"
           />
+          {password && password.length < 6 && (
+            <p className="text-red-500 text-sm mt-1">
+              パスワードは6文字以上で入力してください。
+            </p>
+          )}
         </div>
 
         <button

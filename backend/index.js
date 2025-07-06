@@ -5,6 +5,9 @@ const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 const admin = require("firebase-admin");
+// ✅ Product モデルをインポート！
+const Product = require("./models/Product"); // <-- この行を追加
+const productRoutes = require("./routes/productRoutes");
 
 // Renderなどクラウド環境対応でサービスアカウントキーをセットアップ
 const serviceAccountPath = path.resolve("./serviceAccountKey.json");
@@ -44,8 +47,6 @@ app.use(
 
 app.use(express.json());
 
-const Product = require("./models/Product"); // mongooseのモデル
-
 // MongoDB接続
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -54,6 +55,8 @@ mongoose
   })
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
+
+app.use("/api/products", productRoutes);
 
 // 商品一覧API
 app.get("/api/products", async (req, res) => {

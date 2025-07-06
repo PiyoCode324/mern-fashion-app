@@ -32,6 +32,9 @@ const ProductCard = ({ product }) => {
         />
         <h3 className="text-lg font-bold mt-2">{product.name}</h3>
         <p className="text-gray-600">{product.category}</p>
+        <p className="text-sm text-gray-500 mt-1">
+          作成者: {product.createdBy?.name || "不明"}
+        </p>
         <p className="text-indigo-600 font-semibold mt-1">
           ¥{product.price.toLocaleString()}
         </p>

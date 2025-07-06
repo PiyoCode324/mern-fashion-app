@@ -2,10 +2,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
-// Add Product Page Components
 const AddProduct = () => {
-  // Manages the form state (default is blank)
+  const { user: mongoUser, token } = useAuth();
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -14,28 +14,39 @@ const AddProduct = () => {
     price: "",
   });
 
-  const navigate = useNavigate(); // For page transitions
+  const navigate = useNavigate();
 
-  // Update state when form input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // What happens when a form is submitted
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
+
+    // 🔒 ユーザー情報が未取得のとき送信しない
+    if (!mongoUser?._id) {
+      alert("ユーザー情報の取得中です。しばらくしてから再度お試しください。");
+      return;
+    }
 
     try {
-      // Convert the 'price' string to a number (Mongoose uses Number type).
       const submitData = {
         ...form,
         price: Number(form.price),
+        createdBy: mongoUser._id,
       };
 
-      // Sending product data in a POST request
-      await axios.post(`${import.meta.env.VITE_API_URL}/products`, submitData);
+      console.log("📦 送信データ:", submitData); // ← デバッグ用
+      console.log("🧑 mongoUser:", mongoUser);
+      console.log("🆔 createdBy:", mongoUser?._id);
+      console.log("🔑 トークン:", token?.slice(0, 30) + "..."); // ← 長いので省略表示
 
-      // After successful registration, user will be redirected to the product list page.
+      await axios.post(`${import.meta.env.VITE_API_URL}/products`, submitData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       navigate("/");
     } catch (err) {
       console.error("登録エラー:", err);
@@ -47,9 +58,7 @@ const AddProduct = () => {
     <div className="max-w-md mx-auto p-4">
       <h2 className="text-xl font-bold mb-4">新しい商品を追加</h2>
 
-      {/* Form Body */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Enter the product name */}
         <input
           type="text"
           name="name"
@@ -60,7 +69,6 @@ const AddProduct = () => {
           required
         />
 
-        {/* Select a category */}
         <select
           name="category"
           value={form.category}
@@ -76,7 +84,6 @@ const AddProduct = () => {
           <option value="bag">バッグ</option>
         </select>
 
-        {/* Product Description */}
         <textarea
           name="description"
           placeholder="説明"
@@ -85,7 +92,6 @@ const AddProduct = () => {
           className="w-full p-2 border rounded"
         />
 
-        {/* Enter image URL */}
         <input
           type="text"
           name="imageUrl"
@@ -96,7 +102,6 @@ const AddProduct = () => {
           required
         />
 
-        {/* Entering prices */}
         <input
           type="number"
           name="price"
@@ -108,7 +113,6 @@ const AddProduct = () => {
           min="0"
         />
 
-        {/* Registration button */}
         <button
           type="submit"
           className="w-full bg-indigo-600 text-white py-2 rounded"

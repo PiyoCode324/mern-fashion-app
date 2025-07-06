@@ -71,6 +71,11 @@ export default function ProductDetail() {
         />
         <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
         <p className="text-gray-600 capitalize mb-2">{product.category}</p>
+        {product.createdBy?.name && (
+          <p className="text-sm text-gray-500 mb-2">
+            作成者: {product.createdBy.name}
+          </p>
+        )}
         <p className="text-indigo-700 text-xl font-semibold mb-4">
           {product.price} 円
         </p>
