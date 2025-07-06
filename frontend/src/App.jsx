@@ -91,14 +91,26 @@ function App() {
   };
 
   useEffect(() => {
+    console.log(
+      "👀 useEffect 発火: authLoading =",
+      authLoading,
+      ", isNewFirebaseUser =",
+      isNewFirebaseUser
+    );
+
     if (!authLoading && isNewFirebaseUser && !isRegistering.current) {
+      console.log("✅ 条件を満たしたので registerUserToBackend を呼びます");
+
       const registerUserToBackend = async () => {
         const firebaseUser = auth.currentUser;
         if (firebaseUser) {
           isRegistering.current = true;
-          console.log("App.jsx: MongoDBへの新規ユーザー登録をトリガーします。");
+
+          console.log("🚀 registerUserToBackend: 開始", firebaseUser.uid);
+
           try {
-            const token = await getFreshToken(); // ← 修正
+            const token = await getFreshToken();
+
             await axios.post(
               "/api/users",
               {
@@ -113,16 +125,15 @@ function App() {
                 },
               }
             );
-            console.log("バックエンドユーザー登録成功:");
+
+            console.log("✅ バックエンドユーザー登録成功");
           } catch (err) {
-            console.error("App.jsx: バックエンドユーザー登録エラー:", err);
+            console.error("❌ バックエンドユーザー登録エラー:", err);
             if (err.response && err.response.status === 409) {
-              console.warn(
-                "App.jsx: ユーザーは既にバックエンドに登録されています (409 Conflict)。"
-              );
+              console.warn("⚠️ ユーザーは既に登録されています");
             }
           } finally {
-            // 安全策で、フラグは必要ならリセットしてください（StrictModeの影響に注意）
+            // StrictMode の2回実行に備えて、フラグはすぐ戻さない
             // isRegistering.current = false;
           }
         }
@@ -132,7 +143,7 @@ function App() {
     }
 
     return () => {
-      // isRegistering.current = false; // ここはコメントのままにしておくのが良いです
+      // isRegistering.current = false; // これは必要なら有効化
     };
   }, [authLoading, isNewFirebaseUser]);
 

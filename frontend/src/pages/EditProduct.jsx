@@ -1,11 +1,14 @@
-// src/pages/EditProduct.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth(); // 🔐 認証トークン取得
+  const { user: currentUser } = useAuth();
+
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -16,30 +19,67 @@ const EditProduct = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false); // 🔄 アップロード中
 
-  // 商品データの取得
+  // 商品データ取得
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products/${id}`)
       .then((res) => {
         setForm(res.data);
-        setLoading(false);
+
+        // 作成者チェック
+        if (res.data.createdBy._id !== currentUser._id) {
+          alert("この商品は編集できません");
+          navigate("/");
+        } else {
+          setLoading(false);
+        }
       })
-      .catch((err) => {
+      .catch(() => {
         setError("商品情報の取得に失敗しました");
         setLoading(false);
       });
-  }, [id]);
+  }, [id, currentUser, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // 🔽 Cloudinary アップロード機能
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "mern-fashion-app-unsigned"); // ← Cloudinaryのpreset名
+
+    try {
+      const res = await axios.post(
+        "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload",
+        formData
+      );
+      setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
+    } catch (err) {
+      console.error("画像アップロードエラー:", err);
+      alert("画像のアップロードに失敗しました");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 商品更新
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/products/${id}`, form);
-      navigate("/"); // 商品一覧に戻る
+      await axios.put(`${import.meta.env.VITE_API_URL}/products/${id}`, form, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      navigate("/");
     } catch (err) {
       console.error("更新エラー:", err);
       alert("商品更新に失敗しました。");
@@ -62,11 +102,13 @@ const EditProduct = () => {
           className="w-full p-2 border rounded"
           required
         />
+
         <select
           name="category"
           value={form.category}
           onChange={handleChange}
           className="w-full p-2 border rounded"
+          required
         >
           <option value="">カテゴリ</option>
           <option value="tops">トップス</option>
@@ -75,6 +117,7 @@ const EditProduct = () => {
           <option value="hat">帽子</option>
           <option value="bag">バッグ</option>
         </select>
+
         <textarea
           name="description"
           placeholder="説明"
@@ -82,15 +125,25 @@ const EditProduct = () => {
           onChange={handleChange}
           className="w-full p-2 border rounded"
         />
+
+        {/* 🔽 Cloudinaryアップロード */}
         <input
-          type="text"
-          name="imageUrl"
-          placeholder="画像URL"
-          value={form.imageUrl}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          className="w-full"
         />
+        {uploading && (
+          <p className="text-sm text-gray-500">アップロード中...</p>
+        )}
+        {form.imageUrl && (
+          <img
+            src={form.imageUrl}
+            alt="プレビュー"
+            className="w-full h-auto rounded"
+          />
+        )}
+
         <input
           type="number"
           name="price"
@@ -99,10 +152,13 @@ const EditProduct = () => {
           onChange={handleChange}
           className="w-full p-2 border rounded"
           required
+          min="0"
         />
+
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded"
+          className="w-full bg-indigo-600 text-white py-2 rounded disabled:opacity-50"
+          disabled={uploading}
         >
           更新する
         </button>

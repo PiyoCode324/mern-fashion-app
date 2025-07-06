@@ -1,4 +1,3 @@
-// src/pages/AddProduct.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -6,11 +5,13 @@ import { useAuth } from "../contexts/AuthContext";
 
 const AddProduct = () => {
   const { user: mongoUser, token } = useAuth();
+  const [uploading, setUploading] = useState(false); // アップロード中フラグ
+
   const [form, setForm] = useState({
     name: "",
     category: "",
     description: "",
-    imageUrl: "",
+    imageUrl: "", // ← ここはCloudinaryで自動設定
     price: "",
   });
 
@@ -20,10 +21,32 @@ const AddProduct = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // 🔽 Cloudinaryアップロード
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "mern-fashion-app-unsigned"); // ← Cloudinaryで作成したpreset名
+    try {
+      const res = await axios.post(
+        "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload", // ← cloud_nameに変更
+        formData
+      );
+      setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
+    } catch (err) {
+      console.error("アップロードエラー:", err);
+      alert("画像のアップロードに失敗しました");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🔒 ユーザー情報が未取得のとき送信しない
     if (!mongoUser?._id) {
       alert("ユーザー情報の取得中です。しばらくしてから再度お試しください。");
       return;
@@ -35,11 +58,6 @@ const AddProduct = () => {
         price: Number(form.price),
         createdBy: mongoUser._id,
       };
-
-      console.log("📦 送信データ:", submitData); // ← デバッグ用
-      console.log("🧑 mongoUser:", mongoUser);
-      console.log("🆔 createdBy:", mongoUser?._id);
-      console.log("🔑 トークン:", token?.slice(0, 30) + "..."); // ← 長いので省略表示
 
       await axios.post(`${import.meta.env.VITE_API_URL}/products`, submitData, {
         headers: {
@@ -92,15 +110,23 @@ const AddProduct = () => {
           className="w-full p-2 border rounded"
         />
 
+        {/* 🔽 画像アップロード */}
         <input
-          type="text"
-          name="imageUrl"
-          placeholder="画像URL"
-          value={form.imageUrl}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          className="w-full"
         />
+        {uploading && (
+          <p className="text-sm text-gray-500">アップロード中...</p>
+        )}
+        {form.imageUrl && (
+          <img
+            src={form.imageUrl}
+            alt="プレビュー"
+            className="w-full h-auto rounded"
+          />
+        )}
 
         <input
           type="number"
@@ -115,7 +141,8 @@ const AddProduct = () => {
 
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded"
+          className="w-full bg-indigo-600 text-white py-2 rounded disabled:opacity-50"
+          disabled={uploading}
         >
           登録する
         </button>

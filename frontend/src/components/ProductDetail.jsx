@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useFavorite } from "../contexts/FavoriteContext"; // ❤️追加
+import { useAuth } from "../contexts/AuthContext";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function ProductDetail() {
   const [error, setError] = useState(null);
 
   const { isFavorite, toggleFavorite } = useFavorite(); // ❤️追加
+  const { user: currentUser, token } = useAuth(); // tokenも取得
 
   // 商品情報を取得
   useEffect(() => {
@@ -31,7 +33,11 @@ export default function ProductDetail() {
     if (!confirm) return;
 
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/products/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/products/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // ← ここを追加
+        },
+      });
       alert("商品を削除しました");
       navigate("/");
     } catch (err) {
@@ -44,6 +50,10 @@ export default function ProductDetail() {
   if (error) return <p>{error}</p>;
 
   const favorite = isFavorite(product._id); // ❤️追加
+  const isMine =
+    currentUser &&
+    product.createdBy &&
+    product.createdBy._id === currentUser._id;
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -67,6 +77,7 @@ export default function ProductDetail() {
         <img
           src={product.imageUrl}
           alt={product.name}
+          loading="lazy" // ← 追加！
           className="w-full h-64 object-cover rounded mb-4"
         />
         <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
@@ -84,18 +95,12 @@ export default function ProductDetail() {
             {product.description}
           </p>
         )}
-        <Link
-          to={`/edit/${product._id}`}
-          className="text-sm text-indigo-600 underline mt-2 inline-block"
-        >
-          編集する
-        </Link>
-        <button
-          onClick={handleDelete}
-          className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
-          削除する
-        </button>
+        {isMine && (
+          <>
+            <Link to={`/edit/${product._id}`}>編集する</Link>
+            <button onClick={handleDelete}>削除する</button>
+          </>
+        )}
       </div>
     </div>
   );

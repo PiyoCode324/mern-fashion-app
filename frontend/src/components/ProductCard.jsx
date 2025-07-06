@@ -28,6 +28,7 @@ const ProductCard = ({ product }) => {
         <img
           src={product.imageUrl}
           alt={product.name}
+          loading="lazy" // ← 追加！
           className="w-full h-48 object-cover rounded"
         />
         <h3 className="text-lg font-bold mt-2">{product.name}</h3>
