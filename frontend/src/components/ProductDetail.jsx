@@ -57,19 +57,25 @@ export default function ProductDetail() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <Link to="/" className="text-indigo-600 underline mb-4 inline-block">
-        ← 商品一覧に戻る
+      {/* かわいいホームに戻るボタン */}
+      <Link
+        to="/"
+        className="inline-block mb-6 px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition"
+      >
+        🏠 ホームに戻る
       </Link>
-      <div className="border rounded p-4 shadow relative">
+
+      <div className="border rounded p-6 shadow relative">
         {/* ❤️ ハートボタン */}
         <button
           onClick={() => toggleFavorite(product._id)}
-          className={`absolute top-4 right-4 text-2xl transition-transform duration-300 ${
+          className={`absolute top-4 right-4 text-3xl transition-transform duration-300 ${
             favorite
-              ? "text-red-500 scale-110"
+              ? "text-red-500 scale-125"
               : "text-gray-300 hover:scale-110"
           }`}
           aria-label="お気に入り"
+          title={favorite ? "お気に入り解除" : "お気に入り登録"}
         >
           {favorite ? "❤️" : "🤍"}
         </button>
@@ -77,8 +83,8 @@ export default function ProductDetail() {
         <img
           src={product.imageUrl}
           alt={product.name}
-          loading="lazy" // ← 追加！
-          className="w-full h-64 object-cover rounded mb-4"
+          loading="lazy"
+          className="w-full h-64 object-cover rounded mb-6"
         />
         <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
         <p className="text-gray-600 capitalize mb-2">{product.category}</p>
@@ -87,19 +93,31 @@ export default function ProductDetail() {
             作成者: {product.createdBy.name}
           </p>
         )}
-        <p className="text-indigo-700 text-xl font-semibold mb-4">
-          {product.price} 円
+        <p className="text-indigo-700 text-xl font-semibold mb-6">
+          {product.price.toLocaleString()} 円
         </p>
         {product.description && (
-          <p className="text-gray-800 whitespace-pre-line">
+          <p className="text-gray-800 whitespace-pre-line mb-6">
             {product.description}
           </p>
         )}
+
         {isMine && (
-          <>
-            <Link to={`/edit/${product._id}`}>編集する</Link>
-            <button onClick={handleDelete}>削除する</button>
-          </>
+          <div className="flex gap-4">
+            <Link
+              to={`/edit/${product._id}`}
+              className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-center font-medium transition"
+            >
+              ✏️ 編集する
+            </Link>
+
+            <button
+              onClick={handleDelete}
+              className="px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md font-medium transition"
+            >
+              🗑️ 削除する
+            </button>
+          </div>
         )}
       </div>
     </div>

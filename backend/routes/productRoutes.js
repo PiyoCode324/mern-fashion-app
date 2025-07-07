@@ -4,7 +4,8 @@ const router = express.Router();
 const Product = require("../models/Product");
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
 
-// 🔽 商品の新規作成（createdByにユーザーIDを紐づけ）
+// 📌 Create a new product (only accessible to authenticated users)
+// The creator's MongoDB user ID is set via middleware and stored in the createdBy field
 router.post("/", verifyFirebaseToken, async (req, res) => {
   try {
     const { name, category, description, imageUrl, price } = req.body;
@@ -15,7 +16,7 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
       description,
       imageUrl,
       price,
-      createdBy: req.user._id, // 🔐 ミドルウェアから注入されたMongoDBユーザーID
+      createdBy: req.user._id, // Authenticated user's MongoDB _id
     });
 
     await product.save();
@@ -26,11 +27,13 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// 📌 Get all products
+// Each product includes the creator’s name using populate
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find().populate({
       path: "createdBy",
-      select: "name", // MongoDBのUserスキーマの「name（=displayName）」だけ取得
+      select: "name", // Only retrieve the "name" field from the User model
     });
     res.json(products);
   } catch (err) {
@@ -39,7 +42,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 🔐 商品削除（作成者のみ削除可能）
+// 📌 Delete a product (only the creator can delete)
+// Authenticated user must match the product's creator
 router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -48,7 +52,7 @@ router.delete("/:id", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "商品が見つかりません" });
     }
 
-    // 作成者チェック
+    // Check if the creator and current user match (convert to string and compare)
     if (product.createdBy.toString() !== req.user._id.toString()) {
       return res
         .status(403)
@@ -63,7 +67,8 @@ router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 🔍 商品詳細取得（createdBy.name を含める）
+// 📌 Get detailed information about a single product
+// Includes creator's name via populate
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate(
@@ -80,7 +85,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ✏️ 商品編集（作成者のみ可能）
+// 📌 Edit a product (only the creator can edit)
+// Authenticated user must match the product's creator
 router.put("/:id", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -89,7 +95,7 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "商品が見つかりません" });
     }
 
-    // 作成者チェック
+    // Check if it matches the creator ID
     if (product.createdBy.toString() !== req.user._id.toString()) {
       return res
         .status(403)
@@ -98,7 +104,7 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
 
     const { name, category, description, imageUrl, price } = req.body;
 
-    // フィールド更新
+    // Update product information
     product.name = name;
     product.category = category;
     product.description = description;

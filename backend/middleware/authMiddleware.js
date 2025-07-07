@@ -1,42 +1,43 @@
 // middleware/authMiddleware.js
 const admin = require("firebase-admin");
-const User = require("../models/User"); // Userモデルへのパスが正しいことを再確認してください
+const User = require("../models/User");
 
+// Middleware to validate the Firebase token
 const verifyFirebaseToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
+    // If the Authorization header does not exist or doesn't start with "Bearer", consider it unauthorized
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      // 認証トークンが提供されていない、または形式が不正な場合
       return res
         .status(401)
         .json({ message: "Unauthorized: No token provided" });
     }
 
+    // Extract the ID token from the Authorization header and verify it using Firebase Admin SDK
     const idToken = authHeader.split(" ")[1];
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    // 🔽 Firebase UID から MongoDB ユーザーを探す
-    // ここでMongoDBのUserモデルに保存しているフィールド名を確認してください。
-    // 以前のroutes/userRoutes.jsでは 'uid' を使用していました。
-    const mongoUser = await User.findOne({ uid: decodedToken.uid }); // または { firebaseUid: decodedToken.uid }
+    // Find the user in MongoDB using the Firebase UID
+    // Ensure the 'uid' field in the User model matches the Firebase UID
+    const mongoUser = await User.findOne({ uid: decodedToken.uid });
 
     if (!mongoUser) {
-      // ✅ ここを修正！ユーザーはFirebaseで認証されたが、MongoDBにまだ存在しない場合
-      // フロントエンドは404を期待しています。
+      // If the user is authenticated in Firebase but not found in MongoDB, return 404
       console.log(
         `MongoDBにユーザーが見つかりません (Firebase UID: ${decodedToken.uid})。新規ユーザーの可能性があります。`
       );
       return res
-        .status(404) // ⭐ ここを404に変更！
-        .json({ message: "Not Found: MongoDB user not found" }); // メッセージも404向けに調整
+        .status(404)
+        .json({ message: "Not Found: MongoDB user not found" });
     }
 
-    req.user = mongoUser; // ✅ MongoDBユーザー（_id含む）をセット！
-    console.log("ログイン中のMongoDBユーザー:", req.user);
+    // Attach the MongoDB user object (including _id) to the request
+    req.user = mongoUser;
+
     next();
   } catch (error) {
-    // Firebaseトークンの検証自体に失敗した場合 (期限切れ、無効、改ざんなど)
+    // If token verification fails (invalid, expired, tampered, etc.)
     console.error("Token verification failed:", error);
     return res.status(401).json({ message: "Unauthorized: Invalid token" });
   }

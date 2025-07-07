@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -90,16 +91,27 @@ const EditProduct = () => {
   if (error) return <p>{error}</p>;
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h2 className="text-xl font-bold mb-4">商品を編集</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="max-w-2xl mx-auto p-6 sm:p-8">
+      {/* ホームに戻るボタン */}
+      <div className="mb-6">
+        <Link
+          to="/"
+          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+        >
+          ホームに戻る
+        </Link>
+      </div>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center sm:text-left">
+        商品を編集
+      </h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <input
           type="text"
           name="name"
           placeholder="商品名"
           value={form.name}
           onChange={handleChange}
-          className="w-full p-2 border rounded"
+          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg"
           required
         />
 
@@ -107,7 +119,7 @@ const EditProduct = () => {
           name="category"
           value={form.category}
           onChange={handleChange}
-          className="w-full p-2 border rounded"
+          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg"
           required
         >
           <option value="">カテゴリ</option>
@@ -123,10 +135,9 @@ const EditProduct = () => {
           placeholder="説明"
           value={form.description}
           onChange={handleChange}
-          className="w-full p-2 border rounded"
+          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg min-h-[120px]"
         />
 
-        {/* 🔽 Cloudinaryアップロード */}
         <input
           type="file"
           accept="image/*"
@@ -140,7 +151,7 @@ const EditProduct = () => {
           <img
             src={form.imageUrl}
             alt="プレビュー"
-            className="w-full h-auto rounded"
+            className="w-full max-h-[400px] object-contain rounded"
           />
         )}
 
@@ -150,14 +161,14 @@ const EditProduct = () => {
           placeholder="価格"
           value={form.price}
           onChange={handleChange}
-          className="w-full p-2 border rounded"
+          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg"
           required
           min="0"
         />
 
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded disabled:opacity-50"
+          className="w-full bg-indigo-600 text-white py-3 rounded disabled:opacity-50 text-lg font-semibold"
           disabled={uploading}
         >
           更新する
