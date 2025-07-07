@@ -7,8 +7,6 @@ const Header = ({ handleLogout, userName }) => {
   const { cartItems } = useCart();
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  console.log("ホーム画面 userName:", userName);
-
   return (
     <header className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-gray-100 gap-4 sm:gap-0">
       <h1 className="text-xl font-bold text-center sm:text-left">商品一覧</h1>

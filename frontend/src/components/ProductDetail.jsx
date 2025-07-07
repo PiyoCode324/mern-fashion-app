@@ -50,10 +50,11 @@ export default function ProductDetail() {
   if (error) return <p>{error}</p>;
 
   const favorite = isFavorite(product._id); // ❤️追加
+  const isAdmin = currentUser?.role === "admin";
   const isMine =
     currentUser &&
     product.createdBy &&
-    product.createdBy._id === currentUser._id;
+    (product.createdBy._id === currentUser._id || isAdmin);
 
   return (
     <div className="p-6 max-w-3xl mx-auto">

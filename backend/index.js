@@ -9,6 +9,7 @@ const admin = require("firebase-admin");
 // ✅ Product モデルをインポート！
 const Product = require("./models/Product"); // <-- この行を追加
 const productRoutes = require("./routes/productRoutes");
+const { verifyFirebaseToken } = require("./middleware/authMiddleware");
 
 // Renderなどクラウド環境対応でサービスアカウントキーをセットアップ
 const serviceAccountPath = path.resolve("./serviceAccountKey.json");
@@ -81,6 +82,9 @@ app.post("/api/products", async (req, res) => {
   }
 });
 
+// ユーザー関連APIルートを登録
+app.use("/api/users", userRoutes);
+
 // 商品詳細取得API（idで1件取得）
 app.get("/api/products/:id", async (req, res) => {
   try {
@@ -109,18 +113,21 @@ app.put("/api/products/:id", async (req, res) => {
   }
 });
 
-// 商品を削除するAPI
-app.delete("/api/products/:id", async (req, res) => {
-  try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: "商品を削除しました" });
-  } catch (error) {
-    res.status(500).json({ message: "削除に失敗しました" });
-  }
-});
+const adminCheck = require("./middleware/adminCheck");
 
-// ユーザー関連APIルートを登録
-app.use("/api/users", userRoutes);
+app.delete(
+  "/api/products/:id",
+  verifyFirebaseToken,
+  adminCheck,
+  async (req, res) => {
+    try {
+      await Product.findByIdAndDelete(req.params.id);
+      res.json({ message: "商品を削除しました" });
+    } catch (error) {
+      res.status(500).json({ message: "削除に失敗しました" });
+    }
+  }
+);
 
 // サーバー起動
 const PORT = process.env.PORT || 5000;
