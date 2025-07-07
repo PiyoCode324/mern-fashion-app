@@ -7,12 +7,22 @@ const Header = ({ handleLogout, userName }) => {
   const { cartItems } = useCart();
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  console.log("ホーム画面 userName:", userName);
+
   return (
     <header className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-gray-100 gap-4 sm:gap-0">
       <h1 className="text-xl font-bold text-center sm:text-left">商品一覧</h1>
 
       <div className="flex flex-wrap justify-center sm:justify-end gap-3">
         <span className="text-sm sm:text-base">ようこそ、{userName}さん！</span>
+
+        {/* ✅ プロフィールページへのリンク */}
+        <Link
+          to="/profile"
+          className="bg-yellow-500 text-white px-3 py-1.5 rounded hover:bg-yellow-600 text-sm"
+        >
+          👤 プロフィール
+        </Link>
 
         <Link
           to="/favorites"

@@ -1,4 +1,4 @@
-// AuthContext.jsx
+// src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
@@ -17,6 +17,7 @@ export const useAuth = () => {
 // AuthProviderコンポーネント
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // MongoDBのユーザー情報
+  const [userName, setUserName] = useState("ゲスト"); // 表示用ユーザー名の状態を追加
   const [token, setToken] = useState(null); // Firebase ID トークン
   const [loading, setLoading] = useState(true);
   const [isNewFirebaseUser, setIsNewFirebaseUser] = useState(false);
@@ -35,8 +36,10 @@ export const AuthProvider = ({ children }) => {
               Authorization: `Bearer ${token}`,
             },
           });
+          console.log("MongoDBユーザー情報取得:", res.data);
 
           setUser(res.data);
+          setUserName(res.data.name || "ゲスト"); // ユーザー名を更新
           setIsNewFirebaseUser(false);
         } catch (error) {
           if (error.response && error.response.status === 404) {
@@ -44,10 +47,12 @@ export const AuthProvider = ({ children }) => {
               "AuthContext: Firebaseユーザーは存在するが、MongoDBに未登録です。"
             );
             setUser(null);
+            setUserName("ゲスト");
             setIsNewFirebaseUser(true);
           } else {
             console.error("AuthContext: ユーザー情報の取得中にエラー:", error);
             setUser(null);
+            setUserName("ゲスト");
             setIsNewFirebaseUser(false);
           }
           setToken(null); // エラー時はトークンもクリア
@@ -55,6 +60,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         // ログアウト時
         setUser(null);
+        setUserName("ゲスト");
         setToken(null);
         setIsNewFirebaseUser(false);
       }
@@ -65,7 +71,15 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe(); // クリーンアップ
   }, []);
 
-  const value = { user, token, loading, isNewFirebaseUser };
+  const value = {
+    user,
+    setUser,
+    userName,
+    setUserName,
+    token,
+    loading,
+    isNewFirebaseUser,
+  };
 
   return (
     <AuthContext.Provider value={value}>

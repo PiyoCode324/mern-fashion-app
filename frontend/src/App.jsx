@@ -13,9 +13,9 @@ import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import { useAuth } from "./contexts/AuthContext";
 import { getFreshToken } from "./utils/getFreshToken";
-import axios from "axios";
-
 import Layout from "./components/Layout";
+import Profile from "./pages/Profile"; // ✅ これを追加
+import axios from "axios";
 
 function App() {
   const navigate = useNavigate();
@@ -23,6 +23,7 @@ function App() {
     user: mongoUser,
     loading: authLoading,
     isNewFirebaseUser,
+    userName, // ✅ これを追加！
   } = useAuth();
   const isRegistering = useRef(false);
 
@@ -51,7 +52,9 @@ function App() {
             {
               uid: firebaseUser.uid,
               name:
-                firebaseUser.displayName || firebaseUser.email.split("@")[0],
+                userName ||
+                firebaseUser.displayName ||
+                firebaseUser.email.split("@")[0],
               email: firebaseUser.email,
             },
             {
@@ -76,7 +79,7 @@ function App() {
     }
   }, [authLoading, isNewFirebaseUser]);
 
-  const displayName = auth.currentUser?.displayName || "ゲスト";
+  const displayName = userName || "ゲスト";
 
   return (
     <Layout userName={displayName} handleLogout={handleLogout}>
@@ -87,6 +90,14 @@ function App() {
           element={
             <PrivateRoute>
               <AddProduct />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <Profile />
             </PrivateRoute>
           }
         />
