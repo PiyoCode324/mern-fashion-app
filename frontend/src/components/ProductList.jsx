@@ -15,11 +15,33 @@ const ProductList = () => {
   }, []);
 
   const categories = ["all", "tops", "bottoms", "accessory", "hat", "bag"];
+  const [priceRange, setPriceRange] = useState("all");
+  const [keyword, setKeyword] = useState("");
 
-  const filteredProducts =
-    category === "all"
-      ? products
-      : products.filter((product) => product.category === category);
+  const filteredProducts = products
+    .filter((product) =>
+      category === "all" ? true : product.category === category
+    )
+    .filter((product) => {
+      if (priceRange === "all") return true;
+      const [min, max] = priceRange.split("-").map(Number);
+      return product.price >= min && product.price <= max;
+    })
+    .filter((product) => {
+      if (keyword.trim() === "") return true;
+      const lowerKeyword = keyword.toLowerCase();
+      return (
+        product.name.toLowerCase().includes(lowerKeyword) ||
+        product.description.toLowerCase().includes(lowerKeyword)
+      );
+    });
+
+  const priceRanges = [
+    { label: "すべての価格", value: "all" },
+    { label: "〜¥5,000", value: "0-5000" },
+    { label: "¥5,000〜¥10,000", value: "5000-10000" },
+    { label: "¥10,000〜", value: "10000-999999" },
+  ];
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
@@ -36,6 +58,32 @@ const ProductList = () => {
             {cat}
           </button>
         ))}
+      </div>
+
+      {/* 価格帯フィルター（カテゴリの下） */}
+      <div className="mb-4">
+        <select
+          value={priceRange}
+          onChange={(e) => setPriceRange(e.target.value)}
+          className="border p-2 rounded"
+        >
+          {priceRanges.map((range) => (
+            <option key={range.value} value={range.value}>
+              {range.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 検索フォーム */}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="商品名や説明で検索"
+          className="border p-2 rounded w-full"
+        />
       </div>
 
       {/* 商品一覧 */}
