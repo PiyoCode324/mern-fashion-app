@@ -15,6 +15,8 @@ import { useAuth } from "./contexts/AuthContext";
 import { getFreshToken } from "./utils/getFreshToken";
 import Layout from "./components/Layout";
 import Profile from "./pages/Profile"; // ✅ これを追加
+import ConfirmOrder from "./pages/ConfirmOrder";
+import OrderComplete from "./pages/OrderComplete";
 import axios from "axios";
 
 function App() {
@@ -101,6 +103,31 @@ function App() {
             </PrivateRoute>
           }
         />
+
+        <Route
+          path="/cart"
+          element={
+            <PrivateRoute>
+              <Cart />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/confirm"
+          element={
+            <PrivateRoute>
+              <ConfirmOrder />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/complete"
+          element={
+            <PrivateRoute>
+              <OrderComplete />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/edit/:id"
           element={
@@ -110,7 +137,6 @@ function App() {
           }
         />
         <Route path="/favorites" element={<Favorites />} />
-        <Route path="/cart" element={<Cart />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/products/:id" element={<ProductDetail />} />

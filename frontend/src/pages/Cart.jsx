@@ -82,9 +82,12 @@ const Cart = () => {
             >
               カートを空にする
             </button>
-            <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <Link
+              to="/confirm"
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 inline-block text-center"
+            >
               購入手続きへ進む（仮）
-            </button>
+            </Link>
           </div>
         </>
       )}

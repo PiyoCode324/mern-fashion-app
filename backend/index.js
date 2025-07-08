@@ -6,16 +6,19 @@ const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 const admin = require("firebase-admin");
-// ✅ Product モデルをインポート！
-const Product = require("./models/Product"); // <-- この行を追加
-const productRoutes = require("./routes/productRoutes");
-const { verifyFirebaseToken } = require("./middleware/authMiddleware");
 
-// Renderなどクラウド環境対応でサービスアカウントキーをセットアップ
+const productRoutes = require("./routes/productRoutes");
+const userRoutes = require("./routes/userRoutes");
+const paymentRoutes = require("./routes/payment");
+const { verifyFirebaseToken } = require("./middleware/authMiddleware");
+const adminCheck = require("./middleware/adminCheck");
+
+const Product = require("./models/Product"); // モデルは必要に応じて使うため残してOK
+
+// ✅ Firebaseサービスアカウントのセットアップ（Render等対応）
 const serviceAccountPath = path.resolve("./serviceAccountKey.json");
 
 if (!fs.existsSync(serviceAccountPath)) {
-  // 環境変数からBase64で受け取った文字列を復元しファイル作成
   const base64Key = process.env.SERVICE_ACCOUNT_KEY_BASE64;
   if (!base64Key) {
     throw new Error(
@@ -27,15 +30,13 @@ if (!fs.existsSync(serviceAccountPath)) {
 }
 
 const serviceAccount = require(serviceAccountPath);
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const userRoutes = require("./routes/userRoutes");
-
 const app = express();
 
+// ✅ ミドルウェア
 app.use(
   cors({
     origin: [
@@ -46,10 +47,9 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(express.json());
 
-// MongoDB接続
+// ✅ MongoDB接続
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -58,78 +58,12 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+// ✅ ルーティング
 app.use("/api/products", productRoutes);
-
-// 商品一覧API
-app.get("/api/products", async (req, res) => {
-  try {
-    const products = await Product.find({});
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching products" });
-  }
-});
-
-// 商品を追加するAPI
-app.post("/api/products", async (req, res) => {
-  try {
-    const product = new Product(req.body);
-    const savedProduct = await product.save();
-    res.status(201).json(savedProduct);
-  } catch (err) {
-    console.error("Error saving product:", err.message, err.errors);
-    res.status(500).json({ message: "Error saving product" });
-  }
-});
-
-// ユーザー関連APIルートを登録
 app.use("/api/users", userRoutes);
+app.use("/api/payment", paymentRoutes);
 
-// 商品詳細取得API（idで1件取得）
-app.get("/api/products/:id", async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.json(product);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// 商品情報を更新するAPI
-app.put("/api/products/:id", async (req, res) => {
-  try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    res.json(updated);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error updating product" });
-  }
-});
-
-const adminCheck = require("./middleware/adminCheck");
-
-app.delete(
-  "/api/products/:id",
-  verifyFirebaseToken,
-  adminCheck,
-  async (req, res) => {
-    try {
-      await Product.findByIdAndDelete(req.params.id);
-      res.json({ message: "商品を削除しました" });
-    } catch (error) {
-      res.status(500).json({ message: "削除に失敗しました" });
-    }
-  }
-);
-
-// サーバー起動
+// ✅ サーバー起動
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
