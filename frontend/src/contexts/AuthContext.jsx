@@ -4,61 +4,57 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 import axios from "axios";
 
-// AuthContextを作成
 const AuthContext = createContext(null);
 
-// useAuthカスタムフック
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };
 
-// AuthProviderコンポーネント
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // MongoDBのユーザー情報
-  const [userName, setUserName] = useState("ゲスト"); // 表示用ユーザー名の状態を追加
-  const [token, setToken] = useState(null); // Firebase ID トークン
+  const [firebaseUser, setFirebaseUser] = useState(null); // Firebase Userオブジェクト
+  const [user, setUser] = useState(null); // MongoDBユーザー情報
+  const [userName, setUserName] = useState("ゲスト");
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isNewFirebaseUser, setIsNewFirebaseUser] = useState(false);
 
   useEffect(() => {
-    // Firebase認証状態を監視
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        setFirebaseUser(firebaseUser); // Firebaseユーザー保存
+
         try {
           const token = await firebaseUser.getIdToken();
-          console.log("取得したトークン:", token);
-          setToken(token); // 🔽 トークンを状態に保存
+          setToken(token);
 
           const res = await axios.get("/api/users/me", {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
-          console.log("MongoDBユーザー情報取得:", res.data);
 
           setUser(res.data);
-          setUserName(res.data.name || "ゲスト"); // ユーザー名を更新
+          setUserName(res.data.name || "ゲスト");
           setIsNewFirebaseUser(false);
         } catch (error) {
-          if (error.response && error.response.status === 404) {
-            console.log(
-              "AuthContext: Firebaseユーザーは存在するが、MongoDBに未登録です。"
-            );
+          if (error.response?.status === 404) {
+            console.log("MongoDBに未登録のFirebaseユーザーです。");
             setUser(null);
             setUserName("ゲスト");
             setIsNewFirebaseUser(true);
           } else {
-            console.error("AuthContext: ユーザー情報の取得中にエラー:", error);
+            console.error("ユーザー情報取得エラー:", error);
             setUser(null);
             setUserName("ゲスト");
             setIsNewFirebaseUser(false);
           }
-          setToken(null); // エラー時はトークンもクリア
+          setToken(null);
         }
       } else {
         // ログアウト時
+        setFirebaseUser(null);
         setUser(null);
         setUserName("ゲスト");
         setToken(null);
@@ -68,16 +64,17 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     });
 
-    return () => unsubscribe(); // クリーンアップ
+    return () => unsubscribe();
   }, []);
 
   const value = {
+    firebaseUser, // 👈 追加！
     user,
     setUser,
     userName,
     setUserName,
     token,
-    loading,
+    loadingAuth: loading,
     isNewFirebaseUser,
   };
 

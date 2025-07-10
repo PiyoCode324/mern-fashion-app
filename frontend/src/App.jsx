@@ -17,6 +17,7 @@ import Layout from "./components/Layout";
 import Profile from "./pages/Profile"; // ✅ これを追加
 import ConfirmOrder from "./pages/ConfirmOrder";
 import OrderComplete from "./pages/OrderComplete";
+import MyOrders from "./pages/MyOrders"; // ✅ これを追加
 import axios from "axios";
 
 function App() {
@@ -125,6 +126,14 @@ function App() {
           element={
             <PrivateRoute>
               <OrderComplete />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-orders"
+          element={
+            <PrivateRoute>
+              <MyOrders />
             </PrivateRoute>
           }
         />

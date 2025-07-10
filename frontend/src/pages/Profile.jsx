@@ -1,3 +1,4 @@
+// src/pages/Profile.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
@@ -77,6 +78,15 @@ const Profile = () => {
       >
         ✏️ 名前を更新
       </button>
+
+      <div className="mt-6">
+        <Link
+          to="/my-orders"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block"
+        >
+          🧾 注文履歴を見る
+        </Link>
+      </div>
 
       {message && (
         <p className="mt-4 text-sm text-gray-700 font-medium">{message}</p>

@@ -1,4 +1,4 @@
-// src/contexts/CartContext.jsx
+// src/contexts/CartContext.jsx (修正版)
 import { createContext, useContext, useEffect, useState } from "react";
 
 // Create a Context for the cart
@@ -23,14 +23,17 @@ export const CartProvider = ({ children }) => {
       console.error("Failed to parse cart from localStorage:", error);
       return [];
     }
-  });
+  }); // totalPriceを計算する
 
-  // Save the cart to localStorage whenever it changes
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  ); // Save the cart to localStorage whenever it changes
+
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+  }, [cartItems]); // Add a product to the cart (increment quantity if already exists)
 
-  // Add a product to the cart (increment quantity if already exists)
   const addToCart = (product) => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item._id === product._id);
@@ -46,10 +49,8 @@ export const CartProvider = ({ children }) => {
         return [...prev, { ...product, quantity: 1 }];
       }
     });
-  };
+  }; // Remove a product from the cart // If quantity > 1, decrement it; otherwise, remove the item completely
 
-  // Remove a product from the cart
-  // If quantity > 1, decrement it; otherwise, remove the item completely
   const removeFromCart = (productId) => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item._id === productId);
@@ -67,16 +68,15 @@ export const CartProvider = ({ children }) => {
         return prev.filter((item) => item._id !== productId);
       }
     });
-  };
+  }; // Clear all items from the cart
 
-  // Clear all items from the cart
   const clearCart = () => setCartItems([]);
 
   return (
     <CartContext.Provider
-      value={{ cartItems, addToCart, removeFromCart, clearCart }}
+      value={{ cartItems, addToCart, removeFromCart, clearCart, totalPrice }} // totalPrice を追加！
     >
-      {children}
+            {children}   {" "}
     </CartContext.Provider>
   );
 };
