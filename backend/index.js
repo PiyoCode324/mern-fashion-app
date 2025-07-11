@@ -1,36 +1,27 @@
 // index.js
 
 // ✅ Loading required modules
-require("dotenv").config();
+require("dotenv").config(); // .envファイルを読み込む
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const path = require("path");
-const fs = require("fs");
-const admin = require("firebase-admin");
+
+// ★修正: Firebase Admin SDK の初期化済みadminオブジェクトをインポート
+// これにより、firebaseAdmin.js で一度だけ初期化が行われます
+const admin = require("./firebaseAdmin");
 
 // ✅ Import routes, middleware, and models
 const productRoutes = require("./routes/productRoutes");
 const userRoutes = require("./routes/userRoutes");
 const paymentRoutes = require("./routes/payment");
 const orderRoutes = require("./routes/orderRoutes");
-const { verifyFirebaseToken } = require("./middleware/authMiddleware");
-const adminCheck = require("./middleware/adminCheck");
-const Product = require("./models/Product"); // もし後で必要になった場合のためにインポート
 
-// ✅ Set up Firebase service account
-const serviceAccountPath = path.resolve("./serviceAccountKey.json");
+// authMiddlewareやadminCheckは各ルートで直接インポートして使用
+// const { verifyFirebaseToken } = require("./middleware/authMiddleware"); // これは各ルートで直接インポート
+// const adminCheck = require("./middleware/adminCheck"); // これは各ルートで直接インポート
 
-if (!fs.existsSync(serviceAccountPath)) {
-  const base64Key = process.env.SERVICE_ACCOUNT_KEY_BASE64;
-  if (!base64Key) {
-    throw new Error(
-      "サービスアカウントキーが見つかりません。環境変数を設定してください。"
-    );
-  }
-  const json = Buffer.from(base64Key, "base64").toString("utf8");
-  fs.writeFileSync(serviceAccountPath, json);
-}
+// Productモデルは、もし直接使う必要がなければここでのインポートは不要
+// const Product = require("./models/Product");
 
 // ✅ Create an Express app
 const app = express();
@@ -39,8 +30,8 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", // 開発用
-      "https://mern-fashion-app-frontend.onrender.com", // 本番用
+      "http://localhost:5173", // 開発用フロントエンドのURL
+      "https://mern-fashion-app-frontend.onrender.com", // 本番用フロントエンドのURL
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
@@ -58,13 +49,14 @@ app.use(express.json()); // JSONリクエストパーサー
 // ✅ Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+    // useNewUrlParser と useUnifiedTopology はMongoose 6+ では不要なので削除
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
   })
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// ✅ Register routes（← ここが重要な修正ポイント）
+// ✅ Register routes
 console.log("Applying /api/products routes");
 app.use("/api/products", productRoutes);
 

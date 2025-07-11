@@ -1,19 +1,17 @@
 // middleware/verifyFirebaseOnly.js
-const admin = require("firebase-admin");
-const fs = require("fs");
-const path = require("path");
+const admin = require("firebase-admin"); // 初期化済み admin インスタンスをインポート
 
-// .envからサービスアカウントパスを取得
-const serviceAccountPath = process.env.SERVICE_ACCOUNT_KEY_PATH;
-const fullPath = path.resolve(serviceAccountPath);
-
-// 初期化（安全に）
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(fs.readFileSync(fullPath, "utf8"));
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
+// ★以下の初期化関連のコードを全て削除（またはコメントアウト）します★
+// const fs = require("fs");
+// const path = require("path");
+// const serviceAccountPath = process.env.SERVICE_ACCOUNT_KEY_PATH;
+// const fullPath = path.resolve(serviceAccountPath);
+// if (!admin.apps.length) {
+//   const serviceAccount = JSON.parse(fs.readFileSync(fullPath, "utf8"));
+//   admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount),
+//   });
+// }
 
 // Firebase ID トークンだけ検証するミドルウェア
 const verifyFirebaseOnly = async (req, res, next) => {
@@ -26,9 +24,10 @@ const verifyFirebaseOnly = async (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
+    // ここで admin.auth() を使用しますが、admin は既に firebaseAdmin.js で初期化済み
     const decoded = await admin.auth().verifyIdToken(token);
     console.log("✅ Firebase decoded user:", decoded);
-    req.user = decoded; // 👈 これでルートと整合
+    req.user = decoded;
     next();
   } catch (error) {
     console.error("Firebase token verification failed:", error);
