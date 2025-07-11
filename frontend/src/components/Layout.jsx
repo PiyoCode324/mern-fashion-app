@@ -2,10 +2,14 @@
 import React from "react";
 import Header from "./Header"; // 後ほど切り出す Header を読み込み
 
-const Layout = ({ children, userName, handleLogout }) => {
+const Layout = ({ userName, userRole, handleLogout, children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-white text-gray-800">
-      <Header userName={userName} handleLogout={handleLogout} />
+      <Header
+        userName={userName}
+        userRole={userRole} // 👈 これが必要です！
+        handleLogout={handleLogout}
+      />
 
       <main className="flex-grow px-4 py-6 w-full max-w-screen-lg mx-auto">
         {children}

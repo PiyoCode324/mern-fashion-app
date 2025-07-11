@@ -23,10 +23,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setFirebaseUser(firebaseUser); // Firebaseユーザー保存
+        setFirebaseUser(firebaseUser);
 
         try {
           const token = await firebaseUser.getIdToken();
+
+          // ログイン時にFirebaseユーザー情報とトークンをコンソールに表示
+          console.log("🛡 Firebase User Info:");
+          console.log("UID:", firebaseUser.uid);
+          console.log("Email:", firebaseUser.email);
+          console.log("Display Name:", firebaseUser.displayName);
+          console.log("ID Token:", token);
+
           setToken(token);
 
           const res = await axios.get("/api/users/me", {
@@ -53,7 +61,6 @@ export const AuthProvider = ({ children }) => {
           setToken(null);
         }
       } else {
-        // ログアウト時
         setFirebaseUser(null);
         setUser(null);
         setUserName("ゲスト");
@@ -68,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const value = {
-    firebaseUser, // 👈 追加！
+    firebaseUser,
     user,
     setUser,
     userName,

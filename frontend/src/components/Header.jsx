@@ -1,9 +1,8 @@
-// src/components/Header.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 
-const Header = ({ handleLogout, userName }) => {
+const Header = ({ handleLogout, userName, userRole }) => {
   const { cartItems } = useCart();
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -14,13 +13,22 @@ const Header = ({ handleLogout, userName }) => {
       <div className="flex flex-wrap justify-center sm:justify-end gap-3">
         <span className="text-sm sm:text-base">ようこそ、{userName}さん！</span>
 
-        {/* ✅ プロフィールページへのリンク */}
         <Link
           to="/profile"
           className="bg-yellow-500 text-white px-3 py-1.5 rounded hover:bg-yellow-600 text-sm"
         >
           👤 プロフィール
         </Link>
+
+        {/* ✅ 管理者のみ表示 */}
+        {userRole === "admin" && (
+          <Link
+            to="/admin"
+            className="bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 text-sm"
+          >
+            ⚙️ 管理者ページ
+          </Link>
+        )}
 
         <Link
           to="/favorites"

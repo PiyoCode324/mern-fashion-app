@@ -5,17 +5,46 @@ import { useAuth } from "../contexts/AuthContext";
 import { Link } from "react-router-dom";
 
 const Profile = () => {
-  const { user, token, setUserName } = useAuth(); // setUserNameを追加
+  const { user, token, setUserName } = useAuth();
   const [name, setName] = useState("");
   const [originalName, setOriginalName] = useState("");
   const [message, setMessage] = useState("");
 
+  // 追加：自分の商品一覧と在庫を保持
+  const [myProducts, setMyProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productError, setProductError] = useState(null);
+
   useEffect(() => {
     if (user) {
       setName(user.name);
-      setOriginalName(user.name); // 元の名前を保持（未変更チェック用）
+      setOriginalName(user.name);
     }
   }, [user]);
+
+  // 自分の商品一覧をAPIから取得する処理
+  useEffect(() => {
+    const fetchMyProducts = async () => {
+      if (!token) return;
+
+      try {
+        setLoadingProducts(true);
+        // 自分の商品一覧用のAPIエンドポイントを呼ぶ想定
+        const res = await axios.get("/api/products/mine", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setMyProducts(res.data);
+        setProductError(null);
+      } catch (err) {
+        console.error("自分の商品一覧取得エラー:", err);
+        setProductError("商品一覧の取得に失敗しました。");
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchMyProducts();
+  }, [token]);
 
   const handleUpdate = async () => {
     if (!name.trim()) {
@@ -32,16 +61,13 @@ const Profile = () => {
         `${import.meta.env.VITE_API_URL}/users/${user.uid}`,
         { name },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       console.log("名前更新成功", res.data);
       setMessage("名前を更新しました！");
       setOriginalName(name);
-      setUserName(name); // ここでAuthContextのuserNameを更新
-      console.log("AuthContextのuserNameを更新:", name);
+      setUserName(name);
     } catch (error) {
       console.error("名前の更新に失敗しました:", error);
       setMessage("名前の更新に失敗しました。");
@@ -50,7 +76,6 @@ const Profile = () => {
 
   return (
     <div className="max-w-xl mx-auto p-6">
-      {/* ホームに戻るボタン */}
       <div className="mb-6">
         <Link
           to="/"
@@ -79,7 +104,7 @@ const Profile = () => {
         ✏️ 名前を更新
       </button>
 
-      <div className="mt-6">
+      <div className="mt-6 mb-6">
         <Link
           to="/my-orders"
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block"
@@ -87,6 +112,45 @@ const Profile = () => {
           🧾 注文履歴を見る
         </Link>
       </div>
+
+      {/* 自分の商品一覧表示 */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">自分の商品一覧</h2>
+        {loadingProducts ? (
+          <p>読み込み中...</p>
+        ) : productError ? (
+          <p className="text-red-600">{productError}</p>
+        ) : myProducts.length === 0 ? (
+          <p>登録した商品はありません。</p>
+        ) : (
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="border border-gray-300 p-2">商品名</th>
+                <th className="border border-gray-300 p-2">カテゴリ</th>
+                <th className="border border-gray-300 p-2">価格</th>
+                <th className="border border-gray-300 p-2">在庫数</th>
+              </tr>
+            </thead>
+            <tbody>
+              {myProducts.map((product) => (
+                <tr key={product._id} className="text-center">
+                  <td className="border border-gray-300 p-2">{product.name}</td>
+                  <td className="border border-gray-300 p-2">
+                    {product.category}
+                  </td>
+                  <td className="border border-gray-300 p-2">
+                    ¥{product.price}
+                  </td>
+                  <td className="border border-gray-300 p-2">
+                    {product.countInStock}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
 
       {message && (
         <p className="mt-4 text-sm text-gray-700 font-medium">{message}</p>

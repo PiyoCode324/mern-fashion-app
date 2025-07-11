@@ -1,3 +1,4 @@
+// models/Product.js
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema({
@@ -11,7 +12,7 @@ const productSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: false, // 必須にしたくない場合は false
+    required: false,
   },
   imageUrl: {
     type: String,
@@ -20,6 +21,11 @@ const productSchema = new mongoose.Schema({
   price: {
     type: Number,
     required: true,
+  },
+  countInStock: {
+    type: Number,
+    required: true,
+    default: 0, // 初期値0にしておくと扱いやすいです
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

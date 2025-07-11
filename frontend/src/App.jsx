@@ -18,6 +18,7 @@ import Profile from "./pages/Profile"; // ✅ これを追加
 import ConfirmOrder from "./pages/ConfirmOrder";
 import OrderComplete from "./pages/OrderComplete";
 import MyOrders from "./pages/MyOrders"; // ✅ これを追加
+import AdminDashboard from "./pages/AdminDashboard";
 import axios from "axios";
 
 function App() {
@@ -83,9 +84,14 @@ function App() {
   }, [authLoading, isNewFirebaseUser]);
 
   const displayName = userName || "ゲスト";
+  const userRole = mongoUser?.role || "guest"; // 👈 これを追加
 
   return (
-    <Layout userName={displayName} handleLogout={handleLogout}>
+    <Layout
+      userName={displayName}
+      userRole={userRole} // 👈 追加！
+      handleLogout={handleLogout}
+    >
       <Routes>
         <Route path="/" element={<ProductList />} />
         <Route
@@ -134,6 +140,14 @@ function App() {
           element={
             <PrivateRoute>
               <MyOrders />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <PrivateRoute>
+              <AdminDashboard />
             </PrivateRoute>
           }
         />

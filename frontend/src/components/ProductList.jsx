@@ -2,17 +2,56 @@ import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ProductCard from "./ProductCard";
+import { useAuth } from "../contexts/AuthContext"; // AuthContextをインポート
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState("all");
+  const { firebaseUser, loadingAuth } = useAuth(); // AuthContextからfirebaseUserとloadingAuthを取得
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/products`)
-      .then((res) => setProducts(res.data))
-      .catch((err) => console.error(err));
-  }, []);
+    const fetchProducts = async () => {
+      // 認証の読み込みが完了するまで待つ
+      if (loadingAuth) {
+        return;
+      }
+
+      try {
+        let headers = {};
+        if (firebaseUser) {
+          // Firebaseユーザーがログインしている場合
+          const token = await firebaseUser.getIdToken(); // 最新のIDトークンを取得
+          headers = {
+            Authorization: `Bearer ${token}`, // Authorizationヘッダーにトークンを添付
+          };
+        } else {
+          // Firebaseユーザーがログインしていない場合の処理
+          // 例えば、認証不要な公開商品のみを表示する場合や、
+          // ログインを促すメッセージを表示する場合などを検討してください。
+          console.log(
+            "ユーザーがログインしていません。認証なしで商品を取得します。"
+          );
+          // ここで認証不要な商品だけをロードする、
+          // または商品リストの表示を制限するなどのロジックを追加できます。
+        }
+
+        // axios.getの第二引数にheadersオブジェクトを渡す
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/products`,
+          {
+            headers: headers,
+          }
+        );
+        setProducts(res.data);
+      } catch (err) {
+        console.error("商品の取得に失敗しました:", err);
+        // エラーのステータスコード（例: 401）に応じて、適切なユーザーへのフィードバックや
+        // ログインページへのリダイレクトなどを検討してください。
+      }
+    };
+
+    fetchProducts();
+  }, [firebaseUser, loadingAuth]); // firebaseUserまたはloadingAuthが変更されたときに再実行
 
   const categories = ["all", "tops", "bottoms", "accessory", "hat", "bag"];
   const [priceRange, setPriceRange] = useState("all");

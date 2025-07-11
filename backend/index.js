@@ -1,3 +1,5 @@
+// index.js
+
 // ✅ Loading required modules
 require("dotenv").config();
 const express = require("express");

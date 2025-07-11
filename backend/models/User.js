@@ -21,6 +21,13 @@ const userSchema = new mongoose.Schema(
       match: [/.+@.+\..+/, "有効なメールアドレスを入力してください"],
       index: true,
     },
+    // ★ここから追加★
+    role: {
+      type: String,
+      enum: ["user", "admin"], // 'user'（一般ユーザー）と'admin'（管理者）など、許可するロールを定義
+      default: "user", // デフォルトは'user'に設定
+    },
+    // ★ここまで追加★
   },
   { timestamps: true }
 );
