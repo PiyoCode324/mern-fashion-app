@@ -6,6 +6,7 @@ const adminCheck = require("../middleware/adminCheck");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const sendEmail = require("../utils/sendEmail");
 
 const router = express.Router();
 
@@ -17,12 +18,11 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
   console.log("📦 Order request body:", req.body);
   console.log("👤 UID:", req.user.uid);
 
-  const { items } = req.body; // totalAmount はバックエンドで計算するため、ここでは受け取らない
+  const { items } = req.body;
 
   try {
-    // 注文アイテムを処理し、在庫を更新し、合計金額を計算
     const processedItems = [];
-    let calculatedTotalPrice = 0; // バックエンドで合計金額を計算
+    let calculatedTotalPrice = 0;
 
     for (const item of items) {
       const product = await Product.findById(item.productId);
@@ -39,20 +39,17 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
         });
       }
 
-      // 在庫を減らす
       product.countInStock -= item.quantity;
       await product.save();
 
-      // processedItems に購入時の価格を含める
       processedItems.push({
         productId: item.productId,
         quantity: item.quantity,
-        price: product.price, // 購入時点の商品の価格を保存
+        price: product.price,
       });
       calculatedTotalPrice += product.price * item.quantity;
     }
 
-    // Firebase UIDからMongoDBのUserドキュメントを取得
     const userInDb = await User.findOne({ uid: req.user.uid });
     if (!userInDb) {
       return res
@@ -60,17 +57,38 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
         .json({ message: "注文するユーザーが見つかりません。" });
     }
 
-    // 注文を保存
     const newOrder = new Order({
-      userUid: userInDb._id, // Userモデルの _id を保存する
-      items: processedItems, // 加工済みのアイテムを使用
-      totalPrice: calculatedTotalPrice, // バックエンドで計算した合計金額を使用
+      userUid: userInDb._id,
+      items: processedItems,
+      totalPrice: calculatedTotalPrice,
     });
-
-    console.log("New Order instance created. Attempting to save...");
 
     await newOrder.save();
     console.log("🎉 Order saved successfully to MongoDB.");
+
+    // 📧 メール送信（失敗しても注文は成功）
+    try {
+      await sendEmail({
+        to: userInDb.email,
+        subject: "【Fashion Store】ご注文ありがとうございます！",
+        html: `
+          <h2>ご注文ありがとうございました！</h2>
+          <p>以下の内容で注文を受け付けました。</p>
+          <ul>
+            ${processedItems
+              .map(
+                (item) =>
+                  `<li>商品ID: ${item.productId} - 数量: ${item.quantity}</li>`
+              )
+              .join("")}
+          </ul>
+          <p>合計金額: ¥${calculatedTotalPrice.toLocaleString()}</p>
+        `,
+      });
+      console.log("📧 メール送信完了");
+    } catch (emailErr) {
+      console.error("❌ メール送信エラー:", emailErr);
+    }
 
     res.status(200).json({ message: "Order saved successfully" });
   } catch (err) {
@@ -85,7 +103,6 @@ router.get("/my-orders", verifyFirebaseOnly, async (req, res) => {
   console.log("👤 UID for fetching orders:", req.user.uid);
 
   try {
-    console.log("Attempting to fetch orders from MongoDB...");
     const userInDb = await User.findOne({ uid: req.user.uid });
     if (!userInDb) {
       return res.status(404).json({ message: "ユーザーが見つかりません。" });
@@ -106,12 +123,12 @@ router.get("/", verifyFirebaseOnly, adminCheck, async (req, res) => {
   try {
     const orders = await Order.find({})
       .populate({
-        path: "userUid", // Userモデルを参照
-        select: "name", // ユーザー名だけを埋め込む
+        path: "userUid",
+        select: "name",
       })
       .populate({
-        path: "items.productId", // 注文アイテム内のProductを参照
-        select: "name imageUrl", // 商品名と画像URLを埋め込む
+        path: "items.productId",
+        select: "name imageUrl",
       });
 
     res.json(orders);

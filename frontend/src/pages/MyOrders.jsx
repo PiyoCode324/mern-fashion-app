@@ -50,7 +50,7 @@ const MyOrders = () => {
             <p className="text-sm text-gray-500">
               注文日時: {new Date(order.createdAt).toLocaleString()}
             </p>
-            <p>合計金額: ¥{order.totalAmount}</p>
+            <p>合計金額: ¥{order.totalPrice}</p>
             <ul className="ml-4 mt-2">
               {order.items.map((item, index) => (
                 <li key={index}>
