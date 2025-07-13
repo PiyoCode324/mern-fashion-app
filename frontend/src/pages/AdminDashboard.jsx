@@ -2,21 +2,24 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const AdminDashboard = () => {
+  // 認証情報を取得（ユーザー情報・トークン・認証処理中フラグ）
   const { user, token, loadingAuth } = useAuth();
   const navigate = useNavigate();
 
+  // 商品一覧・注文一覧・ローディング・エラー状態・在庫編集状態を管理するstate
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stockEdits, setStockEdits] = useState({});
+  const [stockEdits, setStockEdits] = useState({}); // 在庫編集用の一時保存データ（productIdごとに入力値を保持）
 
-  // 管理者以外はリダイレクト
+  // --- 管理者判定とリダイレクト ---
   useEffect(() => {
     if (!loadingAuth) {
+      // 認証処理が終わったら、ユーザーが管理者でなければトップページへ強制移動
       if (!user || user.role !== "admin") {
         alert("管理者のみアクセス可能です。");
         navigate("/"); // ホームへリダイレクト
@@ -24,65 +27,72 @@ const AdminDashboard = () => {
     }
   }, [user, loadingAuth, navigate]);
 
-  // 商品一覧・注文一覧取得
+  // --- 商品一覧・注文一覧の取得 ---
   useEffect(() => {
+    // トークンがあり、ユーザーが管理者の場合のみAPIからデータ取得
     if (token && user?.role === "admin") {
       const fetchData = async () => {
         try {
-          setLoading(true);
+          setLoading(true); // ローディング開始
+          // 商品一覧と注文一覧を並列で取得
           const [productsRes, ordersRes] = await Promise.all([
-            // 管理者向け商品一覧のパス (backend/routes/productRoutes.js に合わせる)
             axios.get("/api/products/admin", {
               headers: { Authorization: `Bearer ${token}` },
             }),
-            // 注文一覧のパス
             axios.get("/api/orders", {
               headers: { Authorization: `Bearer ${token}` },
             }),
           ]);
-          setProducts(productsRes.data);
-          setOrders(ordersRes.data);
-          setError(null);
+          setProducts(productsRes.data); // 商品一覧をセット
+          setOrders(ordersRes.data); // 注文一覧をセット
+          setError(null); // エラークリア
         } catch (err) {
           console.error(err);
-          setError("データの取得に失敗しました。");
+          setError("データの取得に失敗しました。"); // エラーメッセージ表示用セット
         } finally {
-          setLoading(false);
+          setLoading(false); // ローディング終了
         }
       };
       fetchData();
     }
   }, [token, user]);
 
+  // 認証やデータ取得中はローディング表示
   if (loadingAuth || loading) return <div>Loading...</div>;
+
+  // エラーがあればメッセージ表示
   if (error) return <div className="text-red-600">{error}</div>;
 
+  // --- 在庫編集用の入力値を更新 ---
   const handleStockChange = (productId, value) => {
     setStockEdits((prev) => ({
       ...prev,
-      [productId]: value,
+      [productId]: value, // productIdをキーにして新しい在庫数を保存
     }));
   };
 
+  // --- 在庫保存処理 ---
   const handleSaveStock = async (productId) => {
     const newCount = stockEdits[productId];
-    // 数値として有効かチェック
+    // 在庫数のバリデーション（数値かつ0以上）
     if (isNaN(newCount) || Number(newCount) < 0) {
       alert("有効な在庫数を入力してください（0以上の数値）。");
       return;
     }
     try {
+      // APIへPATCHリクエストを送って在庫数を更新
       await axios.patch(
         `/api/products/${productId}/stock`,
         { countInStock: Number(newCount) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // 成功したらローカルstateも更新
       setProducts((prev) =>
         prev.map((p) =>
           p._id === productId ? { ...p, countInStock: Number(newCount) } : p
         )
       );
-      // 保存後、stockEditsから該当項目を削除またはリセット
+      // stockEditsから該当の編集データを削除（リセット）
       setStockEdits((prev) => {
         const newState = { ...prev };
         delete newState[productId];
@@ -104,6 +114,16 @@ const AdminDashboard = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      {/* ホームへのリンク */}
+      <div className="mb-6">
+        <Link
+          to="/"
+          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+        >
+          ホームに戻る
+        </Link>
+      </div>
+
       <h1 className="text-3xl font-bold mb-6">管理者ダッシュボード</h1>
 
       {/* --- 商品一覧セクション --- */}
@@ -127,19 +147,25 @@ const AdminDashboard = () => {
             <tbody>
               {products.map((product) => (
                 <tr key={product._id} className="text-center">
+                  {/* 商品ID（小さく表示） */}
                   <td className="border border-gray-300 p-2 text-sm">
                     {product._id}
                   </td>
+                  {/* 商品名 */}
                   <td className="border border-gray-300 p-2">{product.name}</td>
+                  {/* カテゴリー */}
                   <td className="border border-gray-300 p-2">
                     {product.category}
                   </td>
+                  {/* 価格（カンマ区切りで表示） */}
                   <td className="border border-gray-300 p-2">
                     ¥{product.price?.toLocaleString() || "0"}
                   </td>
+                  {/* 現在の在庫数 */}
                   <td className="border border-gray-300 p-2">
                     {product.countInStock}
                   </td>
+                  {/* 在庫管理：在庫数の入力と保存ボタン */}
                   <td className="border border-gray-300 p-2">
                     <input
                       type="number"
@@ -157,6 +183,7 @@ const AdminDashboard = () => {
                       保存
                     </button>
                   </td>
+                  {/* 作成者の名前（不明なら「不明」と表示） */}
                   <td className="border border-gray-300 p-2">
                     {product.createdBy?.name || "不明"}
                   </td>
@@ -186,22 +213,24 @@ const AdminDashboard = () => {
             <tbody>
               {orders.map((order) => (
                 <tr key={order._id} className="text-center">
+                  {/* 注文ID（小さく表示） */}
                   <td className="border border-gray-300 p-2 text-sm">
                     {order._id}
                   </td>
+                  {/* 注文者の名前（userUidがpopulateされている想定） */}
                   <td className="border border-gray-300 p-2">
-                    {/* `order.userUid.name` を参照。`userUid` は populated されていることを想定 */}
                     {order.userUid?.name || "（不明なユーザー）"}
                   </td>
+                  {/* 合計金額（カンマ区切り） */}
                   <td className="border border-gray-300 p-2">
-                    {/* `order.totalPrice` を参照。`toLocaleString` で金額を整形 */}
                     ¥{order.totalPrice?.toLocaleString() || "0"}
                   </td>
+                  {/* 注文日時（ローカル時間で表示） */}
                   <td className="border border-gray-300 p-2">
                     {new Date(order.createdAt).toLocaleString()}
                   </td>
+                  {/* 注文商品の詳細リスト */}
                   <td className="border border-gray-300 p-2 text-left">
-                    {/* `order.items` をループし、各アイテムの `productId.name` と `price` を表示 */}
                     {order.items?.map((item) => (
                       <div key={item._id}>
                         {item.productId?.name || "不明な商品"} x {item.quantity}{" "}

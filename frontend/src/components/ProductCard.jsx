@@ -4,8 +4,11 @@ import { useFavorite } from "../contexts/FavoriteContext";
 import { useCart } from "../contexts/CartContext"; // ← カートContextを追加
 
 const ProductCard = ({ product }) => {
+  // お気に入り関連の関数を取得
   const { toggleFavorite, isFavorite } = useFavorite();
-  const { addToCart } = useCart(); // ← カートに追加する関数を使用
+  // カートに追加する関数を取得
+  const { addToCart } = useCart();
+  // 商品がお気に入りかどうか判定
   const favorite = isFavorite(product._id);
 
   return (
@@ -13,8 +16,8 @@ const ProductCard = ({ product }) => {
       {/* ❤️ お気に入りボタン */}
       <button
         onClick={(e) => {
-          e.preventDefault(); // 親リンククリック防止
-          toggleFavorite(product._id);
+          e.preventDefault(); // 親リンクのクリックを防止
+          toggleFavorite(product._id); // お気に入り状態の切り替え
         }}
         className={`absolute top-2 right-2 text-2xl transition-transform duration-200 ${
           favorite ? "text-red-500 scale-110" : "text-gray-300 hover:scale-110"
@@ -28,7 +31,7 @@ const ProductCard = ({ product }) => {
         <img
           src={product.imageUrl}
           alt={product.name}
-          loading="lazy" // ← 追加！
+          loading="lazy" // 画像の遅延読み込みを有効化
           className="w-full h-48 object-cover rounded"
         />
         <h3 className="text-lg font-bold mt-2">{product.name}</h3>

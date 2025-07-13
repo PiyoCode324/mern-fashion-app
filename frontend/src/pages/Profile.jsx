@@ -5,16 +5,17 @@ import { useAuth } from "../contexts/AuthContext";
 import { Link } from "react-router-dom";
 
 const Profile = () => {
-  const { user, token, setUserName } = useAuth();
+  const { user, token, setUserName } = useAuth(); // 🔐 認証情報と名前更新用関数
   const [name, setName] = useState("");
   const [originalName, setOriginalName] = useState("");
   const [message, setMessage] = useState("");
 
-  // 追加：自分の商品一覧と在庫を保持
+  // 🛍️ 自分の商品一覧関連ステート
   const [myProducts, setMyProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productError, setProductError] = useState(null);
 
+  // 🖋️ ユーザー名の初期値設定
   useEffect(() => {
     if (user) {
       setName(user.name);
@@ -22,14 +23,12 @@ const Profile = () => {
     }
   }, [user]);
 
-  // 自分の商品一覧をAPIから取得する処理
+  // 📦 自分の商品一覧取得
   useEffect(() => {
     const fetchMyProducts = async () => {
       if (!token) return;
-
       try {
         setLoadingProducts(true);
-        // 自分の商品一覧用のAPIエンドポイントを呼ぶ想定
         const res = await axios.get("/api/products/mine", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -46,6 +45,7 @@ const Profile = () => {
     fetchMyProducts();
   }, [token]);
 
+  // 🖋️ ユーザー名更新
   const handleUpdate = async () => {
     if (!name.trim()) {
       setMessage("名前は空にできません。");
@@ -74,6 +74,7 @@ const Profile = () => {
     }
   };
 
+  // 🛠️ 在庫更新処理
   const [stockEdits, setStockEdits] = useState({});
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -86,7 +87,7 @@ const Profile = () => {
 
     try {
       setUpdatingId(productId);
-      const res = await axios.patch(
+      await axios.patch(
         `/api/products/${productId}/stock`,
         { countInStock: newStock },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -105,8 +106,10 @@ const Profile = () => {
     }
   };
 
+  // 🖼️ UI描画部分
   return (
     <div className="max-w-xl mx-auto p-6">
+      {/* 🔙 ホームに戻る */}
       <div className="mb-6">
         <Link
           to="/"
@@ -116,6 +119,7 @@ const Profile = () => {
         </Link>
       </div>
 
+      {/* 🙍‍♂️ ユーザー名編集 */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           名前
@@ -135,6 +139,7 @@ const Profile = () => {
         ✏️ 名前を更新
       </button>
 
+      {/* 🧾 注文履歴へ */}
       <div className="mt-6 mb-6">
         <Link
           to="/my-orders"
@@ -144,7 +149,7 @@ const Profile = () => {
         </Link>
       </div>
 
-      {/* 自分の商品一覧表示 */}
+      {/* 🛍️ 自分の商品と在庫編集 */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">自分の商品一覧</h2>
         {loadingProducts ? (
@@ -171,7 +176,7 @@ const Profile = () => {
                     {product.category}
                   </td>
                   <td className="border border-gray-300 p-2">
-                    ¥{product.price}
+                    ¥{product.price.toLocaleString()}
                   </td>
                   {product.createdBy === user._id && (
                     <td className="border p-2 text-center">
@@ -206,6 +211,7 @@ const Profile = () => {
         )}
       </section>
 
+      {/* ℹ️ 更新メッセージ表示 */}
       {message && (
         <p className="mt-4 text-sm text-gray-700 font-medium">{message}</p>
       )}

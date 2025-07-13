@@ -1,17 +1,24 @@
 // firebaseAdmin.js
+
+// Firebase Admin SDKの初期化ファイルです。
+// Renderなどのクラウド環境用にBase64でサービスアカウントキーを環境変数から読み込み、
+// ローカル開発時はJSONファイルから読み込みます。
+// これによりどちらの環境でも共通のコードでFirebase管理者機能を使えます。
+
 const admin = require("firebase-admin");
 const fs = require("fs");
 const path = require("path");
 
-// ★Render環境変数を優先するロジックを組み込む★
-let serviceAccount;
-const serviceAccountPath = path.resolve("./serviceAccountKey.json"); // ローカル開発用パス
+// ローカル開発用のサービスアカウントJSONファイルパス
+const serviceAccountPath = path.resolve("./serviceAccountKey.json");
 
-// 環境変数 SERVICE_ACCOUNT_KEY_BASE64 が設定されているかチェック
+// 環境変数にBase64形式のサービスアカウントキーがあるかチェック
 const base64Key = process.env.SERVICE_ACCOUNT_KEY_BASE64;
 
+let serviceAccount;
+
 if (base64Key) {
-  // 環境変数が存在する場合は、Base64デコードして使用
+  // Base64の環境変数があればデコードしてJSONとしてパース
   try {
     const json = Buffer.from(base64Key, "base64").toString("utf8");
     serviceAccount = JSON.parse(json);
@@ -28,19 +35,19 @@ if (base64Key) {
     );
   }
 } else if (fs.existsSync(serviceAccountPath)) {
-  // 環境変数がなく、かつファイルが存在する場合は、ファイルから読み込む (主にローカル開発)
+  // ファイルが存在する場合はローカルファイルから読み込み（ローカル開発用）
   serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
   console.log(
     "Firebase Admin SDK: Initializing from serviceAccountKey.json file."
   );
 } else {
-  // どちらも見つからない場合はエラー
+  // どちらも無い場合は初期化できずエラーを投げる
   throw new Error(
     "Firebase サービスアカウントキーが見つかりません。環境変数 SERVICE_ACCOUNT_KEY_BASE64 を設定するか、./serviceAccountKey.json を配置してください。"
   );
 }
 
-// Firebase Admin SDK の初期化（既に初期化されていなければ）
+// 既に初期化済みのappがなければ初期化する
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -48,4 +55,4 @@ if (!admin.apps.length) {
   console.log("✅ Firebase Admin SDK initialized successfully.");
 }
 
-module.exports = admin; // 初期化済み admin オブジェクトをエクスポート
+module.exports = admin; // 初期化済みのadminインスタンスを他モジュールで使えるようにエクスポート

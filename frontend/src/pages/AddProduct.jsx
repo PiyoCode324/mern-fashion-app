@@ -1,27 +1,33 @@
+// src/pages/AddProduct.jsx
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 const AddProduct = () => {
+  // MongoDBのユーザー情報と認証トークンを取得
   const { user: mongoUser, token } = useAuth();
-  const [uploading, setUploading] = useState(false); // アップロード中フラグ
 
+  // 画像アップロード中かどうかを管理するフラグ
+  const [uploading, setUploading] = useState(false);
+
+  // 商品情報フォームの状態
   const [form, setForm] = useState({
     name: "",
     category: "",
     description: "",
-    imageUrl: "", // ← ここはCloudinaryで自動設定
+    imageUrl: "", // Cloudinaryのアップロード後にURLをセット
     price: "",
   });
 
   const navigate = useNavigate();
 
+  // フォームの入力変更ハンドラー
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 🔽 Cloudinaryアップロード
+  // 画像ファイルアップロード処理（Cloudinary）
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -29,12 +35,14 @@ const AddProduct = () => {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "mern-fashion-app-unsigned"); // ← Cloudinaryで作成したpreset名
+    formData.append("upload_preset", "mern-fashion-app-unsigned"); // Cloudinaryで設定したpreset名
+
     try {
       const res = await axios.post(
-        "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload", // ← cloud_nameに変更
+        "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload", // cloud_nameを適宜変更
         formData
       );
+      // アップロード成功した画像のURLをformにセット
       setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
     } catch (err) {
       console.error("アップロードエラー:", err);
@@ -44,27 +52,32 @@ const AddProduct = () => {
     }
   };
 
+  // フォーム送信時の処理
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ユーザー情報がまだ取得できていない場合の保険
     if (!mongoUser?._id) {
       alert("ユーザー情報の取得中です。しばらくしてから再度お試しください。");
       return;
     }
 
     try {
+      // 送信データを整形
       const submitData = {
         ...form,
-        price: Number(form.price),
-        createdBy: mongoUser._id,
+        price: Number(form.price), // 価格は数値化
+        createdBy: mongoUser._id,  // 作成者IDをセット
       };
 
+      // APIへPOSTリクエスト（認証ヘッダー付き）
       await axios.post(`${import.meta.env.VITE_API_URL}/products`, submitData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      // 登録成功後にトップページへ遷移
       navigate("/");
     } catch (err) {
       console.error("登録エラー:", err);
@@ -74,8 +87,19 @@ const AddProduct = () => {
 
   return (
     <div className="max-w-md mx-auto p-4">
+      {/* ホームに戻るリンク */}
+      <div className="mb-6">
+        <Link
+          to="/"
+          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+        >
+          ホームに戻る
+        </Link>
+      </div>
+
       <h2 className="text-xl font-bold mb-4">新しい商品を追加</h2>
 
+      {/* 商品追加フォーム */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -110,7 +134,7 @@ const AddProduct = () => {
           className="w-full p-2 border rounded"
         />
 
-        {/* 🔽 画像アップロード */}
+        {/* 画像アップロード用インプット */}
         <input
           type="file"
           accept="image/*"

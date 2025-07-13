@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useFavorite } from "../contexts/FavoriteContext"; // ❤️追加
-import { useAuth } from "../contexts/AuthContext";
+import { useFavorite } from "../contexts/FavoriteContext"; // ❤️お気に入り機能用Contextを追加
+import { useAuth } from "../contexts/AuthContext"; // 認証情報取得用Context
 
 export default function ProductDetail() {
+  // URLパラメータから商品IDを取得
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // 商品情報、読み込み状態、エラー状態を管理するステート
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { isFavorite, toggleFavorite } = useFavorite(); // ❤️追加
-  const { user: currentUser, token } = useAuth(); // tokenも取得
+  // お気に入りの状態管理関数を取得
+  const { isFavorite, toggleFavorite } = useFavorite();
 
-  // 商品情報を取得
+  // 認証情報とAPI呼び出しに使うトークンを取得
+  const { user: currentUser, token } = useAuth();
+
+  // 商品情報の取得
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products/${id}`)
@@ -28,6 +34,7 @@ export default function ProductDetail() {
       });
   }, [id]);
 
+  // 商品削除ハンドラー
   const handleDelete = async () => {
     const confirm = window.confirm("本当に削除しますか？");
     if (!confirm) return;
@@ -35,21 +42,27 @@ export default function ProductDetail() {
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/products/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`, // ← ここを追加
+          Authorization: `Bearer ${token}`, // 認証ヘッダーにトークンを設定
         },
       });
       alert("商品を削除しました");
-      navigate("/");
+      navigate("/"); // 削除後はホームへ遷移
     } catch (err) {
       console.error("削除エラー:", err);
       alert("削除に失敗しました");
     }
   };
 
+  // 読み込み中はローディング表示
   if (loading) return <p>読み込み中...</p>;
+
+  // エラー時はエラーメッセージ表示
   if (error) return <p>{error}</p>;
 
-  const favorite = isFavorite(product._id); // ❤️追加
+  // お気に入り状態を判定
+  const favorite = isFavorite(product._id);
+
+  // 管理者かつ作成者本人かどうか判定
   const isAdmin = currentUser?.role === "admin";
   const isMine =
     currentUser &&
@@ -58,7 +71,7 @@ export default function ProductDetail() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      {/* かわいいホームに戻るボタン */}
+      {/* ホームへ戻るボタン */}
       <Link
         to="/"
         className="inline-block mb-6 px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md font-medium transition"
@@ -67,7 +80,7 @@ export default function ProductDetail() {
       </Link>
 
       <div className="border rounded p-6 shadow relative">
-        {/* ❤️ ハートボタン */}
+        {/* ❤️ お気に入りトグルボタン */}
         <button
           onClick={() => toggleFavorite(product._id)}
           className={`absolute top-4 right-4 text-3xl transition-transform duration-300 ${
@@ -103,6 +116,7 @@ export default function ProductDetail() {
           </p>
         )}
 
+        {/* 作成者本人か管理者なら編集・削除ボタンを表示 */}
         {isMine && (
           <div className="flex gap-4">
             <Link

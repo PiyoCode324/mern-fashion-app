@@ -5,11 +5,12 @@ import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 
 const OrderComplete = () => {
-  const { clearCart, cartItems, totalPrice } = useCart();
-  const { firebaseUser, loadingAuth } = useAuth(); // ✅ 修正：firebaseUser を使う
+  const { clearCart, cartItems, totalPrice } = useCart(); // 🛒 カート情報
+  const { firebaseUser, loadingAuth } = useAuth(); // 🔐 Firebase認証情報
 
-  const hasSavedOrder = useRef(false);
+  const hasSavedOrder = useRef(false); // ✅ 二重保存を防ぐフラグ
 
+  // 🔽 注文情報の保存処理
   useEffect(() => {
     const saveOrder = async () => {
       if (!firebaseUser || hasSavedOrder.current) return;
@@ -27,7 +28,7 @@ const OrderComplete = () => {
       hasSavedOrder.current = true;
 
       try {
-        const idToken = await firebaseUser.getIdToken(); // ✅ Firebaseのトークン取得
+        const idToken = await firebaseUser.getIdToken(); // 🔐 Firebaseトークン取得
 
         const response = await fetch("/api/orders/save-order", {
           method: "POST",
@@ -50,17 +51,19 @@ const OrderComplete = () => {
         }
 
         console.log("注文保存成功");
-        clearCart();
+        clearCart(); // 🧹 カートを空にする
       } catch (err) {
         console.error("注文保存中エラー:", err);
       }
     };
 
+    // 🔁 ログイン状態の変化に応じて保存実行
     if (!loadingAuth && firebaseUser && !hasSavedOrder.current) {
       saveOrder();
     }
   }, [firebaseUser, loadingAuth, cartItems, totalPrice]);
 
+  // ✅ 完了画面表示
   return (
     <div className="p-6 max-w-xl mx-auto text-center">
       <h2 className="text-2xl font-bold mb-4 text-green-600">

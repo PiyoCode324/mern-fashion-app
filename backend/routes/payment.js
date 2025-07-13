@@ -1,47 +1,48 @@
 // backend/routes/payment.js
 
-// Load the required modules
+// 必要なモジュールを読み込み
 const express = require("express");
 const Stripe = require("stripe");
 const dotenv = require("dotenv");
 
-// Read environment variables from .env file
+// .env ファイルから環境変数を読み込む
 dotenv.config();
 
 const router = express.Router();
 
-// Create a Stripe instance using your secret key
+// Stripeの秘密鍵を使ってStripeインスタンスを作成
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Endpoint for creating a payment session
-// Creates a Stripe session using product information sent from the frontend
+// 支払い用のチェックアウトセッションを作成するAPI
 router.post("/create-checkout-session", async (req, res) => {
-  const { items } = req.body;
+  const { items } = req.body; // フロントエンドから送られてくる購入商品の情報を取得
 
   try {
+    // Stripeのチェックアウトセッションを作成
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"], // Accept card payments
-      mode: "payment", // One-time payment mode
-      // Send product information to Stripe
+      payment_method_types: ["card"], // クレジットカード決済のみ対応
+      mode: "payment", // 一回限りの支払いモード
       line_items: items.map((item) => ({
         price_data: {
-          currency: "jpy", // Use Japanese Yen
+          currency: "jpy", // 通貨は日本円
           product_data: {
-            name: item.name, // Product name
+            name: item.name, // 商品名をStripeに送る
           },
-          unit_amount: item.price, // Price in the smallest currency unit (1 yen = 1)
+          unit_amount: item.price, // 価格（最小通貨単位で。1円=1なのでpriceのまま）
         },
-        quantity: item.quantity, // Product quantity
+        quantity: item.quantity, // 購入個数
       })),
-      success_url: "http://localhost:5173/complete", // Redirect URL after successful payment
-      cancel_url: "http://localhost:5173/cart", // Redirect URL if payment is canceled
+      // 支払い成功時にリダイレクトされるURL（フロントの完了画面）
+      success_url: "http://localhost:5173/complete",
+      // 支払いキャンセル時にリダイレクトされるURL（カート画面など）
+      cancel_url: "http://localhost:5173/cart",
     });
 
-    // Return the session ID to the frontend
+    // フロントエンドにセッションIDを返す（決済開始に必要）
     res.json({ id: session.id });
   } catch (error) {
     console.error("Stripe Session Error:", error);
-    // Return a 500 status code if an error occurs
+    // エラー時は500エラーとわかりやすいメッセージを返す
     res.status(500).json({ error: "決済セッションの作成に失敗しました" });
   }
 });

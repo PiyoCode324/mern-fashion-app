@@ -1,62 +1,58 @@
 // index.js
 
-// ✅ Loading required modules
+// ✅ Load environment variables from .env file
 require("dotenv").config(); // .envファイルを読み込む
+
+// ✅ Load core modules
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
-// ★修正: Firebase Admin SDK の初期化済みadminオブジェクトをインポート
-// これにより、firebaseAdmin.js で一度だけ初期化が行われます
+// ★ Import initialized Firebase Admin SDK instance
+// firebaseAdmin.jsで一度だけ初期化されているadminオブジェクトを取得
 const admin = require("./firebaseAdmin");
 
-// ✅ Import routes, middleware, and models
+// ✅ Import route handlers
 const productRoutes = require("./routes/productRoutes");
 const userRoutes = require("./routes/userRoutes");
 const paymentRoutes = require("./routes/payment");
 const orderRoutes = require("./routes/orderRoutes");
 
-// authMiddlewareやadminCheckは各ルートで直接インポートして使用
-// const { verifyFirebaseToken } = require("./middleware/authMiddleware"); // これは各ルートで直接インポート
-// const adminCheck = require("./middleware/adminCheck"); // これは各ルートで直接インポート
+// ※ authMiddlewareやadminCheckは各ルートファイルで直接インポートして使用するため、ここでは読み込まない
 
-// Productモデルは、もし直接使う必要がなければここでのインポートは不要
-// const Product = require("./models/Product");
-
-// ✅ Create an Express app
+// ✅ Create Express app instance
 const app = express();
 
-// ✅ Middleware configuration
+// ✅ Configure CORS middleware
+// 指定したオリジンのみ許可し、Cookieなどの認証情報も送信可能に設定
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", // 開発用フロントエンドのURL
+      "http://localhost:5173", // ローカル開発用フロントエンドのURL
       "https://mern-fashion-app-frontend.onrender.com", // 本番用フロントエンドのURL
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // 許可するHTTPメソッド
+    credentials: true, // クッキー送信を許可
   })
 );
 
-// 📌 リクエストログ（全ルート共通）
+// 📌 全ルート共通のリクエストログ出力ミドルウェア
 app.use((req, res, next) => {
   console.log(`➡️ Incoming Request: ${req.method} ${req.originalUrl}`);
   next();
 });
 
-app.use(express.json()); // JSONリクエストパーサー
+// ✅ JSONリクエストボディのパース設定
+app.use(express.json());
 
-// ✅ Connect to MongoDB
+// ✅ Connect to MongoDB using Mongoose
+// useNewUrlParserやuseUnifiedTopologyはMongoose 6+でデフォルト有効なので削除済み
 mongoose
-  .connect(process.env.MONGO_URI, {
-    // useNewUrlParser と useUnifiedTopology はMongoose 6+ では不要なので削除
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// ✅ Register routes
+// ✅ Register route handlers under /api 以下のパスに割り当て
 console.log("Applying /api/products routes");
 app.use("/api/products", productRoutes);
 
@@ -69,7 +65,7 @@ app.use("/api/payment", paymentRoutes);
 console.log("Applying /api/orders routes");
 app.use("/api/orders", orderRoutes);
 
-// ✅ Start the server
+// ✅ Start Express server on specified PORT or default 5000
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
