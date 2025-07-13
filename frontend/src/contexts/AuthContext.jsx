@@ -26,14 +26,15 @@ export const AuthProvider = ({ children }) => {
         setFirebaseUser(firebaseUser);
 
         try {
-          const token = await firebaseUser.getIdToken();
+          // ★修正点★ getIdToken(true) で強制的に新しいトークンを取得
+          // これにより、カスタムクレームが更新されている場合は新しいトークンが即座に発行される
+          const token = await firebaseUser.getIdToken(true); // true を渡して強制リフレッシュ
 
-          // ログイン時にFirebaseユーザー情報とトークンをコンソールに表示
           console.log("🛡 Firebase User Info:");
           console.log("UID:", firebaseUser.uid);
           console.log("Email:", firebaseUser.email);
           console.log("Display Name:", firebaseUser.displayName);
-          console.log("ID Token:", token);
+          console.log("ID Token:", token); // ここで新しいトークンが表示されるはず
 
           setToken(token);
 

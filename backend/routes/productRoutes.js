@@ -5,6 +5,21 @@ const Product = require("../models/Product");
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
 const adminCheck = require("../middleware/adminCheck"); // 管理者チェックミドルウェア
 
+// ---
+
+// ✅ 一般ユーザー向け: 全商品を取得するルート (誰でも閲覧可能)
+router.get("/", async (req, res) => {
+  try {
+    const products = await Product.find({}).populate("createdBy", "name"); // ⭐ ここに populate を追加 ⭐
+    res.json(products);
+  } catch (err) {
+    console.error("一般向け商品一覧取得エラー:", err);
+    res.status(500).json({ message: "商品一覧取得に失敗しました" });
+  }
+});
+
+// ---
+
 // 📌 Create a new product (only accessible to authenticated users)
 router.post("/", verifyFirebaseToken, async (req, res) => {
   try {
@@ -29,19 +44,24 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 📌 管理者専用: Get all products
-router.get("/", verifyFirebaseToken, adminCheck, async (req, res) => {
+// ---
+
+// ✅ 管理者専用: 全商品を取得するルート (管理者用ダッシュボードなどで利用)
+// パスを `/admin` などに変更し、管理者のチェックを継続
+router.get("/admin", verifyFirebaseToken, adminCheck, async (req, res) => {
   try {
     const products = await Product.find().populate({
       path: "createdBy",
-      select: "name",
+      select: "name", // 作成者名も取得
     });
     res.json(products);
   } catch (err) {
-    console.error("商品一覧取得エラー:", err);
+    console.error("管理者向け商品一覧取得エラー:", err);
     res.status(500).json({ message: "商品一覧取得に失敗しました" });
   }
 });
+
+// ---
 
 // 📌 作成者専用: 自分の商品一覧取得
 router.get("/mine", verifyFirebaseToken, async (req, res) => {
@@ -53,6 +73,8 @@ router.get("/mine", verifyFirebaseToken, async (req, res) => {
     res.status(500).json({ message: "自分の商品取得に失敗しました" });
   }
 });
+
+// ---
 
 // 📌 Delete a product (only the creator can delete)
 router.delete("/:id", verifyFirebaseToken, async (req, res) => {
@@ -76,13 +98,16 @@ router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 📌 Get detailed information about a single product
+// ---
+
+// 📌 Get detailed information about a single product (誰でも閲覧可能)
+// このルートも通常は認証不要
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate(
       "createdBy",
       "name"
-    );
+    ); // 作成者名は詳細ページでは表示しても良い
     if (!product) {
       return res.status(404).json({ message: "商品が見つかりません" });
     }
@@ -92,6 +117,8 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "商品取得に失敗しました" });
   }
 });
+
+// ---
 
 // 📌 Edit a product (only the creator can edit)
 router.put("/:id", verifyFirebaseToken, async (req, res) => {
@@ -122,6 +149,8 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
     res.status(500).json({ message: "商品更新に失敗しました" });
   }
 });
+
+// ---
 
 // 📌 Update countInStock (Only admin or product creator)
 router.patch("/:id/stock", verifyFirebaseToken, async (req, res) => {

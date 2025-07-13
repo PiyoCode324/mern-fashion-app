@@ -74,6 +74,37 @@ const Profile = () => {
     }
   };
 
+  const [stockEdits, setStockEdits] = useState({});
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const handleSaveStock = async (productId) => {
+    const newStock = Number(stockEdits[productId]);
+    if (isNaN(newStock) || newStock < 0) {
+      alert("在庫数は0以上の整数で入力してください");
+      return;
+    }
+
+    try {
+      setUpdatingId(productId);
+      const res = await axios.patch(
+        `/api/products/${productId}/stock`,
+        { countInStock: newStock },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("在庫を更新しました");
+      setMyProducts((prev) =>
+        prev.map((p) =>
+          p._id === productId ? { ...p, countInStock: newStock } : p
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("在庫の更新に失敗しました");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   return (
     <div className="max-w-xl mx-auto p-6">
       <div className="mb-6">
@@ -142,9 +173,32 @@ const Profile = () => {
                   <td className="border border-gray-300 p-2">
                     ¥{product.price}
                   </td>
-                  <td className="border border-gray-300 p-2">
-                    {product.countInStock}
-                  </td>
+                  {product.createdBy === user._id && (
+                    <td className="border p-2 text-center">
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="number"
+                          className="w-20 border rounded p-1 text-center"
+                          value={
+                            stockEdits[product._id] ?? product.countInStock
+                          }
+                          onChange={(e) =>
+                            setStockEdits({
+                              ...stockEdits,
+                              [product._id]: e.target.value,
+                            })
+                          }
+                        />
+                        <button
+                          onClick={() => handleSaveStock(product._id)}
+                          disabled={updatingId === product._id}
+                          className="ml-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          保存
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

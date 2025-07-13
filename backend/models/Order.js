@@ -1,3 +1,4 @@
+// models/Order.js
 const mongoose = require("mongoose");
 
 const orderItemSchema = new mongoose.Schema({
@@ -11,12 +12,19 @@ const orderItemSchema = new mongoose.Schema({
     required: true,
     min: [1, "Quantity must be at least 1"],
   },
+  price: {
+    // ⭐ ここにpriceフィールドを追加 ⭐
+    type: Number,
+    required: true,
+    min: [0, "Price must be at least 0"],
+  },
 });
 
 const orderSchema = new mongoose.Schema(
   {
     userUid: {
-      type: String, // Firebase UID を格納
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
     items: {
@@ -24,18 +32,16 @@ const orderSchema = new mongoose.Schema(
       required: true,
       validate: [(val) => val.length > 0, "注文商品は1つ以上必要です"],
     },
-    totalAmount: {
+    totalPrice: {
+      // ⭐ totalAmount を totalPrice に変更 ⭐
       type: Number,
       required: true,
       min: [0, "合計金額は0以上である必要があります"],
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+    // createdAt は timestamps: true で自動生成されるので、ここでは明示的に定義する必要はない
   },
   {
-    timestamps: true, // createdAt / updatedAt 両方つけたい場合はこちらも有効
+    timestamps: true, // createdAt と updatedAt を自動的に追加
   }
 );
 

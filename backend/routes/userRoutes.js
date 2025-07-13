@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
 const User = require("../models/User");
+const admin = require("firebase-admin"); // Firebase Admin SDK をインポート
 
 // ✅ POST: Create a new user
 router.post("/", async (req, res) => {
@@ -57,6 +58,40 @@ router.get("/me", verifyFirebaseToken, async (req, res) => {
       console.log("User not found in DB for UID:", req.user.uid);
       return res.status(404).json({ message: "User not found" });
     }
+
+    // --- ⭐ 修正するコード ⭐ ---
+    // Firebase から最新のカスタムクレーム情報を取得 (念のため)
+    const firebaseUserRecord = await admin.auth().getUser(req.user.uid);
+    const currentCustomClaims = firebaseUserRecord.customClaims;
+    console.log(
+      "ℹ️ Current Firebase Custom Claims from record:",
+      currentCustomClaims
+    );
+
+    // DBから取得したロールとFirebaseのカスタムクレームが異なる場合のみ更新
+    if (
+      user.role &&
+      (!currentCustomClaims || currentCustomClaims.role !== user.role)
+    ) {
+      console.log(
+        `💡 Updating Firebase Custom Claims for UID: ${user.uid} to role: ${user.role}`
+      );
+      await admin.auth().setCustomUserClaims(user.uid, { role: user.role });
+      console.log("✅ Firebase Custom Claims updated.");
+    } else if (!user.role && currentCustomClaims && currentCustomClaims.role) {
+      // DBにロールがなく、Firebaseにはロールがある場合 (ロールがDBから削除された場合など)
+      console.log(
+        `💡 Clearing Firebase Custom Claims for UID: ${user.uid} (no role in DB)`
+      );
+      await admin.auth().setCustomUserClaims(user.uid, {}); // ロールクレームをクリア
+      console.log("✅ Firebase Custom Claims cleared.");
+    } else {
+      console.log(
+        "ℹ️ Firebase Custom Claims already up-to-date or no role defined."
+      );
+    }
+    // --- ⭐ 修正するコードはここまで ⭐ ---
+
     res.json(user);
     // 📌 追加: ユーザーデータがフロントエンドに送信されたことを示すログ
     console.log("✅ User data sent to frontend.");
