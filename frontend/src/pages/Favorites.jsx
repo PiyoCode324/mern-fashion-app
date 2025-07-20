@@ -6,19 +6,19 @@ import ProductCard from "../components/ProductCard";
 import { useFavorite } from "../contexts/FavoriteContext";
 
 const Favorites = () => {
-  // お気に入り商品のIDリストをコンテキストから取得
+  // Get favorite product IDs from context
   const { favorites } = useFavorite();
 
-  // お気に入り商品の詳細データを保持
+  // Store detailed favorite product data
   const [products, setProducts] = useState([]);
-  // ローディング状態管理
+  // Manage loading state
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // favorites が未定義なら処理を中断
+    // If favorites is undefined, do nothing
     if (!favorites) return;
 
-    // お気に入りが空の場合はproductsを空配列にしてローディング終了
+    // If no favorites, clear products and stop loading
     if (favorites.length === 0) {
       setProducts([]);
       setLoading(false);
@@ -26,7 +26,7 @@ const Favorites = () => {
     }
 
     setLoading(true);
-    // すべての商品データを取得し、お気に入りIDリストに含まれる商品だけを抽出
+    // Fetch all products and filter by favorite IDs
     axios
       .get(`${import.meta.env.VITE_API_URL}/products`)
       .then((res) => {
@@ -36,8 +36,8 @@ const Favorites = () => {
         setProducts(filtered);
       })
       .catch((err) => {
-        console.error("Error fetching products for favorites:", err);
-        setProducts([]); // エラー時は空配列に設定
+        console.error("Error fetching favorite products:", err);
+        setProducts([]); // Reset to empty on error
       })
       .finally(() => {
         setLoading(false);
@@ -46,7 +46,7 @@ const Favorites = () => {
 
   return (
     <div className="p-4">
-      {/* ホームに戻るリンク */}
+      {/* Back to home link */}
       <div className="mb-6">
         <Link
           to="/"
@@ -56,22 +56,22 @@ const Favorites = () => {
         </Link>
       </div>
 
-      {/* お気に入り一覧タイトル */}
+      {/* Favorites title */}
       <h2 className="text-2xl font-bold mb-4">❤️ お気に入り一覧</h2>
 
       {loading ? (
-        // ローディング表示
+        // Loading message
         <p>お気に入りの商品を読み込み中です...</p>
       ) : (
         <>
           {favorites.length === 0 ? (
-            // お気に入り登録がない場合の表示
+            // Message when no favorites are set
             <p>お気に入りが登録されていません。</p>
           ) : products.length === 0 ? (
-            // お気に入りIDはあるが該当商品がない場合の表示（例: 商品削除済みなど）
+            // Message when no matching products are found (e.g. deleted)
             <p>該当するお気に入りの商品が見つかりませんでした。</p>
           ) : (
-            // 商品カード一覧をグリッドで表示
+            // Display product cards in grid
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {products.map((product) => (
                 <Link key={product._id} to={`/products/${product._id}`}>

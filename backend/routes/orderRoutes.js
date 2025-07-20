@@ -1,8 +1,8 @@
 // routes/orderRoutes.js
 
 const express = require("express");
-const verifyFirebaseOnly = require("../middleware/verifyFirebaseOnly"); // Firebase認証トークン検証ミドルウェア
-const adminCheck = require("../middleware/adminCheck"); // 管理者権限チェックミドルウェア
+const verifyFirebaseOnly = require("../middleware/verifyFirebaseOnly"); // Middleware for verifying Firebase Auth token
+const adminCheck = require("../middleware/adminCheck"); // Middleware for checking admin privileges
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
@@ -12,60 +12,60 @@ const router = express.Router();
 
 console.log("✅ orderRoutes.js loaded and router initialized.");
 
-// 注文の保存と在庫の減少処理
+// 🔽 Route for saving an order and updating inventory
 router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
   console.log("🚀 POST /api/orders/save-order endpoint hit.");
   console.log("📦 Order request body:", req.body);
   console.log("👤 UID:", req.user.uid);
 
-  const { items } = req.body; // 注文された商品の配列
+  const { items } = req.body; // Array of ordered items
 
   try {
     const processedItems = [];
     let calculatedTotalPrice = 0;
 
-    // 注文商品ごとに在庫チェックと在庫数の減少を行う
+    // Iterate through each item and update inventory
     for (const item of items) {
       const product = await Product.findById(item.productId);
 
       if (!product) {
-        // 商品が存在しない場合は404エラーを返す
+        // Return 404 if the product does not exist
         return res.status(404).json({
-          message: `商品が見つかりません: ${item.productId}`,
+          message: `Product not found: ${item.productId}`,
         });
       }
 
       if (product.countInStock < item.quantity) {
-        // 在庫不足の場合はエラーを返す
+        // Return error if stock is insufficient
         return res.status(400).json({
-          message: `「${product.name}」の在庫が不足しています。残り ${product.countInStock} 個です。`,
+          message: `Insufficient stock for "${product.name}". Only ${product.countInStock} left.`,
         });
       }
 
-      // 在庫を減らす
+      // Reduce stock
       product.countInStock -= item.quantity;
       await product.save();
 
-      // 注文商品情報を作成（価格も記録）
+      // Build order item object (including current price)
       processedItems.push({
         productId: item.productId,
         quantity: item.quantity,
         price: product.price,
       });
 
-      // 合計金額に加算
+      // Add to total price
       calculatedTotalPrice += product.price * item.quantity;
     }
 
-    // Firebase UID からMongoDBのユーザー情報を取得
+    // Find the user in MongoDB by Firebase UID
     const userInDb = await User.findOne({ uid: req.user.uid });
     if (!userInDb) {
       return res
         .status(404)
-        .json({ message: "注文するユーザーが見つかりません。" });
+        .json({ message: "User not found for placing the order." });
     }
 
-    // 新しい注文データを作成して保存
+    // Create and save the new order
     const newOrder = new Order({
       userUid: userInDb._id,
       items: processedItems,
@@ -73,30 +73,30 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
     });
 
     await newOrder.save();
-    console.log("🎉 Order saved successfully to MongoDB.");
+    console.log("🎉 Order successfully saved to MongoDB.");
 
-    // 注文確認メールを送信（失敗しても注文処理は成功とみなす）
+    // Attempt to send a confirmation email (non-blocking)
     try {
       await sendEmail({
         to: userInDb.email,
-        subject: "【Fashion Store】ご注文ありがとうございます！",
+        subject: "【Fashion Store】Thank you for your order!",
         html: `
-          <h2>ご注文ありがとうございました！</h2>
-          <p>以下の内容で注文を受け付けました。</p>
+          <h2>Thank you for your order!</h2>
+          <p>We've received your order with the following details:</p>
           <ul>
             ${processedItems
               .map(
                 (item) =>
-                  `<li>商品ID: ${item.productId} - 数量: ${item.quantity}</li>`
+                  `<li>Product ID: ${item.productId} - Quantity: ${item.quantity}</li>`
               )
               .join("")}
           </ul>
-          <p>合計金額: ¥${calculatedTotalPrice.toLocaleString()}</p>
+          <p>Total Price: ¥${calculatedTotalPrice.toLocaleString()}</p>
         `,
       });
-      console.log("📧 メール送信完了");
+      console.log("📧 Confirmation email sent.");
     } catch (emailErr) {
-      console.error("❌ メール送信エラー:", emailErr);
+      console.error("❌ Email sending error:", emailErr);
     }
 
     res.status(200).json({ message: "Order saved successfully" });
@@ -106,35 +106,35 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
   }
 });
 
-// ログイン中ユーザーの注文履歴を取得するAPI
+// 🔽 Route to get order history for the logged-in user
 router.get("/my-orders", verifyFirebaseOnly, async (req, res) => {
   console.log("➡️ GET /api/orders/my-orders endpoint hit.");
   console.log("👤 UID for fetching orders:", req.user.uid);
 
   try {
-    // Firebase UID から MongoDB のユーザー情報を取得
+    // Find the user by Firebase UID
     const userInDb = await User.findOne({ uid: req.user.uid });
     if (!userInDb) {
-      return res.status(404).json({ message: "ユーザーが見つかりません。" });
+      return res.status(404).json({ message: "User not found." });
     }
 
-    // ユーザーの注文履歴を取得し、注文商品の詳細も一緒に取得する
+    // Fetch the user's orders and populate product info
     const orders = await Order.find({ userUid: userInDb._id }).populate(
       "items.productId"
     );
 
-    console.log(`✅ Fetched ${orders.length} orders.`);
+    console.log(`✅ Retrieved ${orders.length} orders.`);
     res.status(200).json(orders);
   } catch (err) {
-    console.error("❌ Order Fetch Error:", err);
+    console.error("❌ Error fetching order history:", err);
     res.status(500).json({ error: "Failed to fetch orders" });
   }
 });
 
-// 管理者のみがアクセスできる全注文一覧取得API
+// 🔽 Route for admin to get all orders (admin access only)
 router.get("/", verifyFirebaseOnly, adminCheck, async (req, res) => {
   try {
-    // 全注文を取得し、ユーザー名や商品名・画像もまとめて取得
+    // Fetch all orders and populate user and product information
     const orders = await Order.find({})
       .populate({
         path: "userUid",
@@ -147,8 +147,8 @@ router.get("/", verifyFirebaseOnly, adminCheck, async (req, res) => {
 
     res.json(orders);
   } catch (err) {
-    console.error("管理者向け注文一覧取得エラー:", err);
-    res.status(500).json({ error: "注文一覧取得に失敗しました" });
+    console.error("❌ Error fetching all orders (admin):", err);
+    res.status(500).json({ error: "Failed to retrieve orders" });
   }
 });
 

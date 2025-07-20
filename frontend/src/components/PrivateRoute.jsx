@@ -1,16 +1,18 @@
+// src/components/PrivateRoute.jsx
+
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-// 認証が必要なルート用コンポーネント
-// ログイン済みのユーザーのみ children を表示し、それ以外はログインページへリダイレクトする
+// A route wrapper that requires authentication
+// Renders children only if the user is logged in; otherwise, redirects to the login page
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
-  // 認証状態を確認中の場合は何も表示しない（必要に応じてローディング表示に変更可能）
+  // If authentication status is still loading, render nothing (you can replace this with a loading spinner if needed)
   if (loading) return null;
 
-  // ユーザーが存在すれば children を表示し、なければログイン画面へ遷移
+  // If the user is authenticated, render the protected content; otherwise, redirect to login
   return user ? children : <Navigate to="/login" />;
 };
 

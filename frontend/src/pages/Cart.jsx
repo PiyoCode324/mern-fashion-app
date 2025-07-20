@@ -4,10 +4,10 @@ import { useCart } from "../contexts/CartContext";
 import { Link } from "react-router-dom";
 
 const Cart = () => {
-  // カート内のアイテムと操作用関数を取得
+  // Get cart items and cart manipulation functions
   const { cartItems, addToCart, removeFromCart, clearCart } = useCart();
 
-  // カート内全商品の合計金額を計算（価格 × 数量の合計）
+  // Calculate total price (price × quantity)
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -15,7 +15,7 @@ const Cart = () => {
 
   return (
     <div className="p-6">
-      {/* ホームに戻るリンク */}
+      {/* Back to Home link */}
       <div className="mb-6">
         <Link
           to="/"
@@ -25,22 +25,22 @@ const Cart = () => {
         </Link>
       </div>
 
-      {/* カートタイトル */}
+      {/* Cart title */}
       <h2 className="text-2xl font-bold mb-4">🛍 カート一覧</h2>
 
-      {/* カートが空の場合 */}
+      {/* If cart is empty */}
       {cartItems.length === 0 ? (
         <p className="text-gray-600">カートに商品はありません。</p>
       ) : (
         <>
-          {/* カート内商品一覧 */}
+          {/* Cart items list */}
           <ul className="divide-y divide-gray-200 mb-6">
             {cartItems.map((item, index) => (
               <li
                 key={index}
                 className="py-4 flex items-center justify-between gap-4"
               >
-                {/* 商品の画像・名前・価格・数量・小計表示 */}
+                {/* Product details: image, name, price, quantity, subtotal */}
                 <div className="flex items-center gap-4 flex-1">
                   <img
                     src={item.imageUrl}
@@ -61,9 +61,9 @@ const Cart = () => {
                   </div>
                 </div>
 
-                {/* 数量増減ボタン */}
+                {/* Quantity control buttons */}
                 <div className="flex flex-col gap-1">
-                  {/* 「＋」ボタン：数量を1増やす */}
+                  {/* "+" button: Increase quantity by 1 */}
                   <button
                     onClick={() => addToCart(item)}
                     className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
@@ -71,7 +71,7 @@ const Cart = () => {
                   >
                     ＋
                   </button>
-                  {/* 「－」ボタン：数量を1減らす */}
+                  {/* "-" button: Decrease quantity by 1 */}
                   <button
                     onClick={() => removeFromCart(item._id)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
@@ -84,16 +84,16 @@ const Cart = () => {
             ))}
           </ul>
 
-          {/* 合計金額表示 */}
+          {/* Total price */}
           <div className="text-right mb-4">
             <p className="text-lg font-semibold">
               合計金額：¥{total.toLocaleString()}
             </p>
           </div>
 
-          {/* カート操作ボタン */}
+          {/* Cart action buttons */}
           <div className="flex justify-between">
-            {/* カートを空にするボタン */}
+            {/* Clear cart button */}
             <button
               onClick={clearCart}
               className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
@@ -101,7 +101,7 @@ const Cart = () => {
               カートを空にする
             </button>
 
-            {/* 購入手続きページへのリンク（仮） */}
+            {/* Proceed to purchase (placeholder) */}
             <Link
               to="/confirm"
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 inline-block text-center"

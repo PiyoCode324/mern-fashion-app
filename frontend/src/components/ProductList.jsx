@@ -6,17 +6,17 @@ import ProductCard from "./ProductCard";
 import { useAuth } from "../contexts/AuthContext"; // AuthContextをインポート
 
 const ProductList = () => {
-  // 商品一覧を格納するステート
+  // State for storing product list
   const [products, setProducts] = useState([]);
-  // カテゴリの絞り込みステート（初期値は"all"）
+  // Category filter state (default is "all")
   const [category, setCategory] = useState("all");
-  // Firebase認証のユーザー情報と認証読み込み状態を取得
+  // Get Firebase authentication user information and authentication loading status
   const { firebaseUser, loadingAuth } = useAuth();
 
-  // 商品取得処理（firebaseUserや認証読み込み状態の変化に応じて実行）
+  // Product retrieval process (executed according to changes in firebaseUser and authentication loading status)
   useEffect(() => {
     const fetchProducts = async () => {
-      // 認証情報の読み込みが完了していなければ処理を待つ
+      // If the authentication information has not been loaded, wait for the process to finish.
       if (loadingAuth) {
         return;
       }
@@ -24,20 +24,20 @@ const ProductList = () => {
       try {
         let headers = {};
         if (firebaseUser) {
-          // ログイン済みユーザーなら最新のIDトークンを取得し、認証ヘッダーに設定
+          // If the user is logged in, get the latest ID token and set it in the authorization header.
           const token = await firebaseUser.getIdToken();
           headers = {
             Authorization: `Bearer ${token}`,
           };
         } else {
-          // 未ログインの場合の挙動（例：認証不要の商品だけ表示など）
+          // Behavior when not logged in (e.g. displaying only products that do not require authentication)
           console.log(
             "ユーザーがログインしていません。認証なしで商品を取得します。"
           );
-          // 認証不要商品限定の処理をここに追加可能
+          // Processing for products that do not require authentication can be added here
         }
 
-        // APIから商品一覧を取得（認証ヘッダー付き）
+        // Get product list from API (with authentication header)
         const res = await axios.get(
           `${import.meta.env.VITE_API_URL}/products`,
           {
@@ -47,33 +47,33 @@ const ProductList = () => {
         setProducts(res.data);
       } catch (err) {
         console.error("商品の取得に失敗しました:", err);
-        // 401などのエラーに応じてログイン画面へのリダイレクトや通知を検討
+        // Consider redirecting to the login screen or sending a notification in response to errors such as 401
       }
     };
 
     fetchProducts();
   }, [firebaseUser, loadingAuth]);
 
-  // 商品カテゴリの一覧
+  // Product Category List
   const categories = ["all", "tops", "bottoms", "accessory", "hat", "bag"];
-  // 価格帯の絞り込みステート
+  // Price range narrowing state
   const [priceRange, setPriceRange] = useState("all");
-  // キーワード検索用ステート
+  // Keyword search state
   const [keyword, setKeyword] = useState("");
 
-  // 取得した商品リストに対して複数のフィルターを適用
+  // Apply multiple filters to the retrieved product list
   const filteredProducts = products
-    // カテゴリでフィルタリング（allはすべてを表示）
+    // Filter by category (all shows all)
     .filter((product) =>
       category === "all" ? true : product.category === category
     )
-    // 価格帯でフィルタリング（allはすべての価格を含む）
+    // Filter by price range (all includes all prices)
     .filter((product) => {
       if (priceRange === "all") return true;
       const [min, max] = priceRange.split("-").map(Number);
       return product.price >= min && product.price <= max;
     })
-    // キーワード検索（商品名または説明に部分一致）
+    // Keyword search (partial match on product name or description)
     .filter((product) => {
       if (keyword.trim() === "") return true;
       const lowerKeyword = keyword.toLowerCase();
@@ -83,7 +83,7 @@ const ProductList = () => {
       );
     });
 
-  // 価格帯の選択肢リスト
+  // Price range options list
   const priceRanges = [
     { label: "すべての価格", value: "all" },
     { label: "〜¥5,000", value: "0-5000" },
@@ -93,7 +93,7 @@ const ProductList = () => {
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
-      {/* カテゴリーフィルター */}
+      {/* Category Filter */}
       <div className="flex flex-wrap gap-2 mb-4">
         {categories.map((cat) => (
           <button
@@ -108,7 +108,7 @@ const ProductList = () => {
         ))}
       </div>
 
-      {/* 価格帯フィルター */}
+      {/* Price range filter */}
       <div className="mb-4">
         <select
           value={priceRange}
@@ -123,7 +123,7 @@ const ProductList = () => {
         </select>
       </div>
 
-      {/* キーワード検索フォーム */}
+      {/* Keyword search form */}
       <div className="mb-4">
         <input
           type="text"
@@ -134,7 +134,7 @@ const ProductList = () => {
         />
       </div>
 
-      {/* フィルター後の商品一覧を表示 */}
+      {/* Display the filtered product list */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredProducts.map((product) => (
           <Link key={product._id} to={`/products/${product._id}`}>

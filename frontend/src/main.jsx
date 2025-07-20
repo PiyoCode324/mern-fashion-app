@@ -1,44 +1,44 @@
 // main.jsx
-// React の StrictMode（開発時のバグ検出などに役立つ）
+// React's StrictMode (helps detect potential problems during development)
 import { StrictMode } from "react";
 
-// React 18 以降のルート作成 API
+// API for creating a root in React 18+
 import { createRoot } from "react-dom/client";
 
-// React Router のルーティング機能を提供
+// Provides routing functionality using React Router
 import { BrowserRouter } from "react-router-dom";
 
-// お気に入り管理用のコンテキスト
+// Context for managing favorite items
 import { FavoriteProvider } from "./contexts/FavoriteContext";
 
-// カート管理用のコンテキスト
+// Context for managing the shopping cart
 import { CartProvider } from "./contexts/CartContext";
 
-// 認証管理用のコンテキスト
+// Context for managing authentication state
 import { AuthProvider } from "./contexts/AuthContext";
 
-// トースト通知機能（ユーザーへのフィードバック表示）
+// Toast notification component (used to show feedback to users)
 import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // トーストのスタイルを読み込み
+import "react-toastify/dist/ReactToastify.css"; // Import toast styles
 
-// 全体スタイルとメインアプリコンポーネント
+// Global styles and the main app component
 import "./index.css";
 import App from "./App.jsx";
 
-// 📌 アプリケーションのルート要素に対してレンダリングを実行
+// 📌 Render the application into the root DOM element
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    {/* 🌟 お気に入り機能（例：ハートマーク）の状態管理 */}
+    {/* 🌟 Manages the state of favorite items (e.g., heart icons) */}
     <FavoriteProvider>
-      {/* 🧭 ページ遷移を可能にするルーティング */}
+      {/* 🧭 Handles client-side routing and navigation */}
       <BrowserRouter>
-        {/* 🛒 カートの状態（商品追加・削除・合計金額など）を管理 */}
+        {/* 🛒 Manages cart state (items, total amount, etc.) */}
         <CartProvider>
-          {/* 🔐 認証状態（ログイン済みユーザー情報など）を管理 */}
+          {/* 🔐 Manages authentication state (logged-in user info, etc.) */}
           <AuthProvider>
-            {/* 🧩 実際に表示されるメインアプリケーション */}
+            {/* 🧩 The main application component */}
             <App />
-            {/* 💬 通知の表示領域（成功・エラーなどのフィードバック） */}
+            {/* 💬 Displays toast notifications (success, error messages, etc.) */}
             <ToastContainer />
           </AuthProvider>
         </CartProvider>

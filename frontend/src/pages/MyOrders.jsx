@@ -4,21 +4,21 @@ import { getAuth } from "firebase/auth";
 import { Link } from "react-router-dom";
 
 const MyOrders = () => {
-  const [orders, setOrders] = useState([]); // 🧾 ユーザーの注文履歴
-  const [loading, setLoading] = useState(true); // 🔄 ローディング状態
+  const [orders, setOrders] = useState([]); // 🧾 User order history
+  const [loading, setLoading] = useState(true); // 🔄 Loading state
 
-  // 🔽 注文履歴の取得処理（初回マウント時）
+  // 🔽 Fetch order history on initial mount
   useEffect(() => {
     const fetchOrders = async () => {
       const auth = getAuth();
       const user = auth.currentUser;
 
       if (!user) {
-        console.log("ログインしていません");
+        console.log("Not logged in");
         return;
       }
 
-      const idToken = await user.getIdToken(); // 🔐 Firebaseトークン取得
+      const idToken = await user.getIdToken(); // 🔐 Get Firebase ID token
 
       const res = await fetch("/api/orders/my-orders", {
         headers: {
@@ -27,11 +27,11 @@ const MyOrders = () => {
       });
 
       if (!res.ok) {
-        console.error("注文取得に失敗しました");
+        console.error("Failed to fetch orders");
         return;
       }
 
-      const data = await res.json(); // ✅ 注文データ取得成功
+      const data = await res.json(); // ✅ Successfully retrieved orders
       setOrders(data);
       setLoading(false);
     };
@@ -39,39 +39,39 @@ const MyOrders = () => {
     fetchOrders();
   }, []);
 
-  // 🔄 ローディング中の表示
-  if (loading) return <p>読み込み中...</p>;
+  // 🔄 Show loading indicator
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div>
-      {/* 🔙 プロフィールに戻るボタン */}
+      {/* 🔙 Back to profile */}
       <div className="mb-6">
         <Link
           to="/profile"
           className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
         >
-          プロフィールに戻る
+          Back to Profile
         </Link>
       </div>
 
-      <h2 className="text-xl font-bold mb-4">注文履歴</h2>
+      <h2 className="text-xl font-bold mb-4">Order History</h2>
 
-      {/* 📦 注文一覧表示 */}
+      {/* 📦 Order list */}
       {orders.length === 0 ? (
-        <p>注文履歴はありません。</p>
+        <p>No orders found.</p>
       ) : (
         orders.map((order) => (
           <div key={order._id} className="border p-4 mb-4 rounded-md shadow">
             <p className="text-sm text-gray-500">
-              注文日時: {new Date(order.createdAt).toLocaleString()}
+              Ordered on: {new Date(order.createdAt).toLocaleString()}
             </p>
-            <p>合計金額: ¥{order.totalPrice.toLocaleString()}</p>
+            <p>Total: ¥{order.totalPrice.toLocaleString()}</p>
 
-            {/* 🧾 商品の明細 */}
+            {/* 🧾 Items in the order */}
             <ul className="ml-4 mt-2">
               {order.items.map((item, index) => (
                 <li key={index}>
-                  {item.productId?.name || "商品名なし"} × {item.quantity}
+                  {item.productId?.name || "Unnamed product"} × {item.quantity}
                 </li>
               ))}
             </ul>

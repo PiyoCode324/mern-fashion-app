@@ -1,38 +1,38 @@
 // src/utils/saveOrder.js
 import { getAuth } from "firebase/auth";
 
-// 🧾 注文データをサーバーに保存するユーティリティ関数
+// 🧾 Utility function to save order data to the server
 export const saveOrder = async (items, totalAmount) => {
   const auth = getAuth();
   const user = auth.currentUser;
 
-  // 🔐 ログインしているか確認
+  // 🔐 Check if the user is logged in
   if (!user) {
     throw new Error("ログインしていません");
   }
 
-  // 🪪 FirebaseのIDトークンを取得
+  // 🪪 Retrieve Firebase ID token
   const idToken = await user.getIdToken();
 
-  // 📡 注文情報をバックエンドに送信
+  // 📡 Send order information to the backend
   const response = await fetch("/api/orders/save-order", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`, // 🔑 認証トークンをヘッダーに追加
+      Authorization: `Bearer ${idToken}`, // 🔑 Include the authentication token in the header
     },
     body: JSON.stringify({
-      items, // 🛒 商品リスト
-      totalAmount, // 💰 合計金額
+      items, // 🛒 Product list
+      totalAmount, // 💰 Total amount
     }),
   });
 
-  // ❌ レスポンスが失敗した場合のエラーハンドリング
+  // ❌ Handle errors if the response fails
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.error || "注文保存に失敗しました");
   }
 
-  // ✅ 保存成功時のレスポンスデータを返す
+  // ✅ Return response data if saving is successful
   return await response.json();
 };

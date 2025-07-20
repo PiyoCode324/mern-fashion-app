@@ -5,15 +5,15 @@ import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 
 const EditProduct = () => {
-  // ルートパラメータから商品IDを取得
+  // Get product ID from route
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // 認証トークンと現在のログインユーザー情報を取得
+  // Get authentication token and user info
   const { token } = useAuth();
   const { user: currentUser } = useAuth();
 
-  // フォーム状態管理（商品情報）
+  // Form state for product fields
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -22,22 +22,22 @@ const EditProduct = () => {
     price: "",
   });
 
-  // ローディング・エラー・アップロード中の状態管理
+  // State for loading, error, and image upload
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  // 商品情報を取得し、編集権限チェックを行う
+  // Fetch product details and check edit permissions
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products/${id}`)
       .then((res) => {
         setForm(res.data);
 
-        // 編集権限：商品作成者のみ編集可能
+        // Only the product creator can edit
         if (res.data.createdBy._id !== currentUser._id) {
           alert("この商品は編集できません");
-          navigate("/"); // 権限なければトップへリダイレクト
+          navigate("/");
         } else {
           setLoading(false);
         }
@@ -48,12 +48,12 @@ const EditProduct = () => {
       });
   }, [id, currentUser, navigate]);
 
-  // 入力フォームの変更をstateに反映
+  // Update form state on input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Cloudinaryへの画像アップロード処理
+  // Upload image to Cloudinary
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -61,47 +61,46 @@ const EditProduct = () => {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "mern-fashion-app-unsigned"); // Cloudinaryのpreset名
+    formData.append("upload_preset", "mern-fashion-app-unsigned"); // Cloudinary preset
 
     try {
       const res = await axios.post(
         "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload",
         formData
       );
-      // アップロード成功したら画像URLをフォームにセット
+      // Set uploaded image URL
       setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
     } catch (err) {
-      console.error("画像アップロードエラー:", err);
+      console.error("Image upload error:", err);
       alert("画像のアップロードに失敗しました");
     } finally {
       setUploading(false);
     }
   };
 
-  // フォーム送信で商品情報を更新する
+  // Submit updated product data
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await axios.put(`${import.meta.env.VITE_API_URL}/products/${id}`, form, {
         headers: {
-          Authorization: `Bearer ${token}`, // 認証トークンを送信
+          Authorization: `Bearer ${token}`,
         },
       });
-      // 更新成功後はホームへ遷移
       navigate("/");
     } catch (err) {
-      console.error("更新エラー:", err);
+      console.error("Update error:", err);
       alert("商品更新に失敗しました。");
     }
   };
 
-  // 読み込み中・エラー時の表示
+  // Show loading or error message
   if (loading) return <p>読み込み中...</p>;
   if (error) return <p>{error}</p>;
 
   return (
     <div className="max-w-2xl mx-auto p-6 sm:p-8">
-      {/* ホームに戻るボタン */}
+      {/* Back to Home */}
       <div className="mb-6">
         <Link
           to="/"
@@ -111,14 +110,14 @@ const EditProduct = () => {
         </Link>
       </div>
 
-      {/* 編集画面タイトル */}
+      {/* Page title */}
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center sm:text-left">
         商品を編集
       </h2>
 
-      {/* 編集フォーム */}
+      {/* Edit product form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 商品名 */}
+        {/* Name input */}
         <input
           type="text"
           name="name"
@@ -129,7 +128,7 @@ const EditProduct = () => {
           required
         />
 
-        {/* カテゴリ選択 */}
+        {/* Category select */}
         <select
           name="category"
           value={form.category}
@@ -145,7 +144,7 @@ const EditProduct = () => {
           <option value="bag">バッグ</option>
         </select>
 
-        {/* 商品説明 */}
+        {/* Description textarea */}
         <textarea
           name="description"
           placeholder="説明"
@@ -154,18 +153,20 @@ const EditProduct = () => {
           className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg min-h-[120px]"
         />
 
-        {/* 画像ファイルアップロード */}
+        {/* Image upload */}
         <input
           type="file"
           accept="image/*"
           onChange={handleFileUpload}
           className="w-full"
         />
-        {/* アップロード中表示 */}
+
+        {/* Uploading message */}
         {uploading && (
           <p className="text-sm text-gray-500">アップロード中...</p>
         )}
-        {/* アップロード済み画像プレビュー */}
+
+        {/* Preview uploaded image */}
         {form.imageUrl && (
           <img
             src={form.imageUrl}
@@ -174,7 +175,7 @@ const EditProduct = () => {
           />
         )}
 
-        {/* 価格入力 */}
+        {/* Price input */}
         <input
           type="number"
           name="price"
@@ -186,7 +187,7 @@ const EditProduct = () => {
           min="0"
         />
 
-        {/* 更新ボタン（アップロード中は無効） */}
+        {/* Submit button */}
         <button
           type="submit"
           className="w-full bg-indigo-600 text-white py-3 rounded disabled:opacity-50 text-lg font-semibold"

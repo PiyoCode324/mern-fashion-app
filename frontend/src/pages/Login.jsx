@@ -5,25 +5,25 @@ import { auth } from "../firebase";
 import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
-  // フォームの状態管理: メールアドレス、パスワード、エラーメッセージ
+  // Form state: email, password, error message
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
-  // フォーム送信時の処理
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg(""); // 送信時にエラーメッセージをリセット
+    setErrorMsg(""); // Clear previous errors
 
     try {
-      // Firebaseのメール/パスワード認証でログイン試行
+      // Sign in using Firebase email/password authentication
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/"); // 成功したらホーム画面へ遷移
+      navigate("/"); // Redirect to home on success
     } catch (error) {
-      console.error("ログインエラー:", error.code);
+      console.error("Login error:", error.code);
 
-      // Firebaseエラーコードに応じたユーザーフレンドリーなメッセージ設定
+      // Show user-friendly error messages based on Firebase error codes
       switch (error.code) {
         case "auth/user-not-found":
           setErrorMsg("このメールアドレスのアカウントは存在しません。");
@@ -47,15 +47,15 @@ const Login = () => {
 
   return (
     <div className="max-w-md mx-auto mt-12 p-6 border rounded shadow">
-      {/* ページタイトル */}
+      {/* Page title */}
       <h2 className="text-2xl font-bold mb-6">ログイン</h2>
 
-      {/* エラーメッセージ表示（あれば） */}
+      {/* Error message */}
       {errorMsg && <p className="text-red-600 mb-4">{errorMsg}</p>}
 
-      {/* ログインフォーム */}
+      {/* Login form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* メールアドレス入力 */}
+        {/* Email input */}
         <input
           type="email"
           placeholder="メールアドレス"
@@ -65,7 +65,7 @@ const Login = () => {
           className="p-2 border rounded"
         />
 
-        {/* パスワード入力 */}
+        {/* Password input */}
         <input
           type="password"
           placeholder="パスワード"
@@ -75,7 +75,7 @@ const Login = () => {
           className="p-2 border rounded"
         />
 
-        {/* 送信ボタン */}
+        {/* Login button */}
         <button
           type="submit"
           className="bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
@@ -83,7 +83,7 @@ const Login = () => {
           ログイン
         </button>
 
-        {/* アカウント未登録者への案内リンク */}
+        {/* Signup link */}
         <p className="text-sm">
           アカウントをお持ちでない方は{" "}
           <Link to="/signup" className="text-blue-600 hover:underline">

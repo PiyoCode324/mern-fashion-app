@@ -1,16 +1,16 @@
 // utils/getFreshToken.js
 import { auth } from "../firebase";
 
-// 🔐 Firebaseの最新トークンを取得するユーティリティ関数
+// 🔐 Utility function to retrieve the latest Firebase ID token
 export const getFreshToken = async () => {
   const firebaseUser = auth.currentUser;
 
-  // 👤 ログインユーザーが存在するかチェック
+  // 👤 Check if a logged-in user exists
   if (firebaseUser) {
-    // 🔄 「true」でトークンを強制リフレッシュして取得
+    // 🔄 Force refresh to obtain a new token
     return await firebaseUser.getIdToken(true);
   }
 
-  // ⚠️ ログインしていない場合は null を返す
+  // ⚠️ Return null if not logged in
   return null;
 };

@@ -4,138 +4,129 @@ const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
-const adminCheck = require("../middleware/adminCheck"); // 管理者チェックミドルウェア
+const adminCheck = require("../middleware/adminCheck"); // Middleware to check for admin privileges
 
-// ✅ 一般ユーザー向け: 全商品を取得するルート (誰でも見れるよ)
+// ✅ Public: Get all products (accessible to anyone)
 router.get("/", async (req, res) => {
   try {
-    // 商品一覧をDBから取得し、作成者の名前も取得(populateでリレーションを張る)
+    // Retrieve all products from the database, along with the creator's name
     const products = await Product.find({}).populate("createdBy", "name");
-    res.json(products); // JSONで返すよ
+    res.json(products);
   } catch (err) {
-    console.error("一般向け商品一覧取得エラー:", err);
-    res.status(500).json({ message: "商品一覧取得に失敗しました" });
+    console.error("Error fetching public product list:", err);
+    res.status(500).json({ message: "Failed to fetch product list" });
   }
 });
 
-// ---
-// 📌 新しい商品を作るAPI (ログイン済みユーザーだけ使える)
+// 📌 Create a new product (only available to logged-in users)
 router.post("/", verifyFirebaseToken, async (req, res) => {
   try {
-    // フロントから送られてきた商品情報を受け取る
+    // Receive product data from frontend
     const { name, category, description, imageUrl, price, countInStock } =
       req.body;
 
-    // 新しいProductインスタンスを作成
+    // Create a new Product instance
     const product = new Product({
       name,
       category,
       description,
       imageUrl,
       price,
-      countInStock: countInStock ?? 0, // 在庫がなければ0にするよ
-      createdBy: req.user._id, // ログインユーザーIDを登録者としてセット
+      countInStock: countInStock ?? 0, // Defaults to 0 if not provided
+      createdBy: req.user._id, // Assign current user as the creator
     });
 
-    await product.save(); // DBに保存
-    res.status(201).json(product); // 作成した商品を返す
+    await product.save(); // Save product to DB
+    res.status(201).json(product); // Return the newly created product
   } catch (err) {
-    console.error("商品登録エラー:", err);
-    res.status(500).json({ message: "商品登録に失敗しました。" });
+    console.error("Error creating product:", err);
+    res.status(500).json({ message: "Failed to create product" });
   }
 });
 
-// ---
-// ✅ 管理者専用: 全商品を取得するルート（管理画面用）
+// ✅ Admin only: Get all products (for admin panel)
 router.get("/admin", verifyFirebaseToken, adminCheck, async (req, res) => {
   try {
-    // 管理者だけが使えるのでadminCheckミドルウェアで制御済み
+    // Controlled by adminCheck middleware
     const products = await Product.find().populate({
       path: "createdBy",
-      select: "name", // 作成者名を表示
+      select: "name", // Show creator name
     });
     res.json(products);
   } catch (err) {
-    console.error("管理者向け商品一覧取得エラー:", err);
-    res.status(500).json({ message: "商品一覧取得に失敗しました" });
+    console.error("Error fetching admin product list:", err);
+    res.status(500).json({ message: "Failed to fetch product list" });
   }
 });
 
-// ---
-// 📌 自分が作った商品の一覧を取得する（ログインユーザー専用）
+// 📌 Get all products created by the logged-in user
 router.get("/mine", verifyFirebaseToken, async (req, res) => {
   try {
-    // ログインユーザーのIDで商品を絞り込み
+    // Filter products by creator ID (current user)
     const products = await Product.find({ createdBy: req.user._id });
     res.json(products);
   } catch (err) {
-    console.error("自分の商品取得エラー:", err);
-    res.status(500).json({ message: "自分の商品取得に失敗しました" });
+    console.error("Error fetching user's own products:", err);
+    res.status(500).json({ message: "Failed to fetch your products" });
   }
 });
 
-// ---
-// 📌 商品削除（作成者だけが削除可能）
+// 📌 Delete a product (only the creator can delete)
 router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   try {
-    // 削除対象の商品を取得
     const product = await Product.findById(req.params.id);
     if (!product) {
-      return res.status(404).json({ message: "商品が見つかりません" });
+      return res.status(404).json({ message: "Product not found" });
     }
 
-    // 作成者とログインユーザーを比較して権限チェック
+    // Only the creator is allowed to delete
     if (product.createdBy.toString() !== req.user._id.toString()) {
       return res
         .status(403)
-        .json({ message: "この商品を削除する権限がありません" });
+        .json({ message: "You do not have permission to delete this product" });
     }
 
-    await product.deleteOne(); // 削除
-    res.status(200).json({ message: "商品を削除しました" });
+    await product.deleteOne();
+    res.status(200).json({ message: "Product deleted successfully" });
   } catch (err) {
-    console.error("商品削除エラー:", err);
-    res.status(500).json({ message: "商品削除に失敗しました" });
+    console.error("Error deleting product:", err);
+    res.status(500).json({ message: "Failed to delete product" });
   }
 });
 
-// ---
-// 📌 商品の詳細情報取得（誰でも見れる）
+// 📌 Get detailed product info (publicly accessible)
 router.get("/:id", async (req, res) => {
   try {
-    // 指定IDの商品を取得、作成者名も一緒に取得
     const product = await Product.findById(req.params.id).populate(
       "createdBy",
       "name"
     );
     if (!product) {
-      return res.status(404).json({ message: "商品が見つかりません" });
+      return res.status(404).json({ message: "Product not found" });
     }
     res.json(product);
   } catch (err) {
-    console.error("商品詳細取得エラー:", err);
-    res.status(500).json({ message: "商品取得に失敗しました" });
+    console.error("Error fetching product details:", err);
+    res.status(500).json({ message: "Failed to fetch product details" });
   }
 });
 
-// ---
-// 📌 商品情報の編集（作成者だけが編集可能）
+// 📌 Update a product (only the creator can update)
 router.put("/:id", verifyFirebaseToken, async (req, res) => {
   try {
-    // 編集対象の商品を取得
     const product = await Product.findById(req.params.id);
     if (!product) {
-      return res.status(404).json({ message: "商品が見つかりません" });
+      return res.status(404).json({ message: "Product not found" });
     }
 
-    // 作成者チェック
+    // Only the creator can update
     if (product.createdBy.toString() !== req.user._id.toString()) {
       return res
         .status(403)
-        .json({ message: "この商品を編集する権限がありません" });
+        .json({ message: "You do not have permission to edit this product" });
     }
 
-    // 送られてきた更新情報をセット
+    // Update product fields
     const { name, category, description, imageUrl, price } = req.body;
     product.name = name;
     product.category = category;
@@ -143,49 +134,46 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
     product.imageUrl = imageUrl;
     product.price = price;
 
-    await product.save(); // DB保存
+    await product.save();
     res.status(200).json(product);
   } catch (err) {
-    console.error("商品更新エラー:", err);
-    res.status(500).json({ message: "商品更新に失敗しました" });
+    console.error("Error updating product:", err);
+    res.status(500).json({ message: "Failed to update product" });
   }
 });
 
-// ---
-// 📌 在庫数更新（管理者か作成者だけ可能）
+// 📌 Update product stock (only available to admins or the creator)
 router.patch("/:id/stock", verifyFirebaseToken, async (req, res) => {
   try {
-    // 対象商品取得
     const product = await Product.findById(req.params.id);
     if (!product) {
-      return res.status(404).json({ message: "商品が見つかりません" });
+      return res.status(404).json({ message: "Product not found" });
     }
 
-    // 管理者か作成者かチェック
+    // Check if the user is either an admin or the product creator
     const isAdmin = req.user.role === "admin";
     const isCreator = product.createdBy?.toString() === req.user._id.toString();
     if (!isAdmin && !isCreator) {
-      return res
-        .status(403)
-        .json({ message: "この商品の在庫を変更する権限がありません" });
+      return res.status(403).json({
+        message: "You do not have permission to update this product's stock",
+      });
     }
 
-    // 送られた在庫数を整数に変換し、0以上かチェック
     let { countInStock } = req.body;
     countInStock = parseInt(countInStock);
     if (isNaN(countInStock) || countInStock < 0) {
-      return res
-        .status(400)
-        .json({ message: "countInStockは0以上の整数で入力してください" });
+      return res.status(400).json({
+        message: "Please provide a valid stock count (integer ≥ 0)",
+      });
     }
 
     product.countInStock = countInStock;
     await product.save();
 
-    res.status(200).json({ message: "在庫を更新しました", product });
+    res.status(200).json({ message: "Stock updated successfully", product });
   } catch (err) {
-    console.error("在庫更新エラー:", err);
-    res.status(500).json({ message: "在庫更新に失敗しました" });
+    console.error("Error updating stock:", err);
+    res.status(500).json({ message: "Failed to update stock" });
   }
 });
 

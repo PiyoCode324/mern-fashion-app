@@ -5,30 +5,30 @@ import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 
 const OrderComplete = () => {
-  const { clearCart, cartItems, totalPrice } = useCart(); // 🛒 カート情報
-  const { firebaseUser, loadingAuth } = useAuth(); // 🔐 Firebase認証情報
+  const { clearCart, cartItems, totalPrice } = useCart(); // 🛒 Cart information
+  const { firebaseUser, loadingAuth } = useAuth(); // 🔐 Firebase authentication
 
-  const hasSavedOrder = useRef(false); // ✅ 二重保存を防ぐフラグ
+  const hasSavedOrder = useRef(false); // ✅ Prevent duplicate submission
 
-  // 🔽 注文情報の保存処理
+  // 🔽 Save order information
   useEffect(() => {
     const saveOrder = async () => {
       if (!firebaseUser || hasSavedOrder.current) return;
 
       if (cartItems.length === 0 && totalPrice === 0) {
-        console.log("カートが空のため保存スキップ");
+        console.log("Cart is empty, skipping save");
         return;
       }
 
       if (typeof totalPrice === "undefined" || totalPrice === null) {
-        console.error("totalPriceが不正のため中止");
+        console.error("Invalid totalPrice, skipping save");
         return;
       }
 
       hasSavedOrder.current = true;
 
       try {
-        const idToken = await firebaseUser.getIdToken(); // 🔐 Firebaseトークン取得
+        const idToken = await firebaseUser.getIdToken(); // 🔐 Retrieve Firebase ID token
 
         const response = await fetch("/api/orders/save-order", {
           method: "POST",
@@ -47,23 +47,23 @@ const OrderComplete = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "注文保存に失敗しました");
+          throw new Error(errorData.error || "Failed to save order");
         }
 
-        console.log("注文保存成功");
-        clearCart(); // 🧹 カートを空にする
+        console.log("Order saved successfully");
+        clearCart(); // 🧹 Clear cart
       } catch (err) {
-        console.error("注文保存中エラー:", err);
+        console.error("Error saving order:", err);
       }
     };
 
-    // 🔁 ログイン状態の変化に応じて保存実行
+    // 🔁 Save when user is authenticated
     if (!loadingAuth && firebaseUser && !hasSavedOrder.current) {
       saveOrder();
     }
   }, [firebaseUser, loadingAuth, cartItems, totalPrice]);
 
-  // ✅ 完了画面表示
+  // ✅ Display completion screen
   return (
     <div className="p-6 max-w-xl mx-auto text-center">
       <h2 className="text-2xl font-bold mb-4 text-green-600">

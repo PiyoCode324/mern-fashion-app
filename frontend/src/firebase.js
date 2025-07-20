@@ -1,23 +1,23 @@
 // src/firebase.js
-// Firebase SDK から必要な機能をインポート
+// Import necessary functionality from the Firebase SDK
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// 📦 .env ファイルに定義された環境変数から Firebase の設定を読み込み
+// 📦 Load Firebase configuration from environment variables defined in the .env file
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY, // 認証キー
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, // 認証ドメイン
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID, // プロジェクトID
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, // ストレージバケット（画像などの保存用）
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, // 通知などで使用
-  appId: import.meta.env.VITE_FIREBASE_APP_ID, // アプリID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY, // API key for authentication
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, // Authentication domain
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID, // Firebase project ID
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, // Storage bucket (e.g., for images)
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, // Used for notifications, etc.
+  appId: import.meta.env.VITE_FIREBASE_APP_ID, // Firebase App ID
 };
 
-// 🔧 Firebase アプリの初期化
+// 🔧 Initialize the Firebase app
 const app = initializeApp(firebaseConfig);
 
-// 🔐 Firebase Authentication のインスタンスを取得して他ファイルで使えるように
+// 🔐 Get a Firebase Authentication instance to use in other files
 export const auth = getAuth(app);
 
-// 🎯 初期化した Firebase アプリも必要があればエクスポート
+// 🎯 Export the initialized Firebase app if needed
 export default app;

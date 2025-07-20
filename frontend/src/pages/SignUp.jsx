@@ -7,39 +7,39 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const SignUp = () => {
-  // 🧾 入力フィールド用ステート
-  const [name, setName] = useState(""); // 名前
-  const [email, setEmail] = useState(""); // メールアドレス
-  const [password, setPassword] = useState(""); // パスワード
-  const [error, setError] = useState(""); // エラーメッセージ
-  const navigate = useNavigate(); // 🔁 遷移用
+  // 🧾 Input Field State
+  const [name, setName] = useState(""); // user name
+  const [email, setEmail] = useState(""); // email address
+  const [password, setPassword] = useState(""); // password
+  const [error, setError] = useState(""); // error message
+  const navigate = useNavigate(); // For page navigation
 
-  // 🚀 サインアップ処理
+  // 🚀 Handle user registration
   const handleSignUp = async (e) => {
     e.preventDefault();
     setError("");
 
-    // ⚠️ クライアント側バリデーション
+    // ⚠️ Client-side validation
     if (password.length < 6) {
       setError("パスワードは6文字以上で入力してください。");
       return;
     }
 
     try {
-      // ✅ Firebaseでアカウント作成
+      // ✅ Create account with Firebase
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      // ✏️ FirebaseのdisplayNameに名前を登録
+      // ✏️ Set user display name in Firebase
       await updateProfile(userCredential.user, { displayName: name });
 
       const user = userCredential.user;
-      const token = await user.getIdToken(); // 🔑 Firebaseトークン取得
+      const token = await user.getIdToken(); // Get Firebase ID token
 
-      // 📨 バックエンドにユーザー情報を保存
+      // 📨 Save user info to backend
       await axios.post(
         "/api/users",
         {
@@ -54,12 +54,12 @@ const SignUp = () => {
         }
       );
 
-      // 🎉 登録完了後はホームへ
+      // 🎉 After registration, redirect to home page
       navigate("/");
     } catch (err) {
       console.error("登録エラー:", err);
 
-      // ⚠️ エラー処理（Firebaseエラー + APIエラー）
+      // ⚠️ Handle Firebase and API errors
       if (err.response?.status === 409) {
         setError(err.response.data.message);
       } else if (err.code === "auth/email-already-in-use") {
@@ -73,7 +73,7 @@ const SignUp = () => {
     }
   };
 
-  // 🖼️ UIレンダリング
+  // 🖼️ Render UI
   return (
     <div className="max-w-md mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4">新規登録</h2>
@@ -81,7 +81,7 @@ const SignUp = () => {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <form onSubmit={handleSignUp} className="space-y-4">
-        {/* 🙍‍♀️ 名前入力 */}
+        {/* 🙍‍♀️ Name input */}
         <div>
           <label className="block">名前</label>
           <input
@@ -93,7 +93,7 @@ const SignUp = () => {
           />
         </div>
 
-        {/* 📧 メールアドレス入力 */}
+        {/* 📧 Email input */}
         <div>
           <label className="block">メールアドレス</label>
           <input
@@ -105,7 +105,7 @@ const SignUp = () => {
           />
         </div>
 
-        {/* 🔑 パスワード入力 */}
+        {/* 🔑 Password input */}
         <div>
           <label className="block">パスワード</label>
           <input
@@ -115,7 +115,7 @@ const SignUp = () => {
             required
             className="w-full border border-gray-300 p-2 rounded"
           />
-          {/* ⛔ パスワードの長さチェック */}
+          {/* ⛔ Password length validation */}
           {password && password.length < 6 && (
             <p className="text-red-500 text-sm mt-1">
               パスワードは6文字以上で入力してください。
@@ -123,7 +123,7 @@ const SignUp = () => {
           )}
         </div>
 
-        {/* ✅ 登録ボタン */}
+        {/* ✅ Submit registration */}
         <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"

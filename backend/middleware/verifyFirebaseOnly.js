@@ -1,38 +1,38 @@
 // middleware/verifyFirebaseOnly.js
-// 🔐 FirebaseのIDトークンだけを検証するためのミドルウェア
-// ※このミドルウェアではMongoDBとの連携は行わず、Firebaseの認証確認のみを行います
+// 🔐 Middleware for validating Firebase ID tokens only
+// ※This middleware does not integrate with MongoDB; it only performs authentication checks using Firebase.
 
-const admin = require("firebase-admin"); // Firebase Admin SDK（初期化済みインスタンス）を使用
+const admin = require("firebase-admin"); // Use the initialized Firebase Admin SDK
 
-// ✅ Firebase IDトークンを検証するミドルウェア関数
+// ✅ Middleware function to validate Firebase ID tokens
 const verifyFirebaseOnly = async (req, res, next) => {
-  // 🔍 リクエストヘッダーから認証情報（Authorization）を取得
+  // 🔍 Retrieve the authorization information from the request header
   const authHeader = req.headers.authorization;
 
-  // ⚠️ トークンが存在しない、または"Bearer "で始まらない場合は未認証とする
+  // ⚠️ If the token is missing or doesn't start with "Bearer", the user is considered unauthenticated
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // "Bearer xxx" からトークン部分だけ取り出す
+  // Extract the token part from "Bearer xxx"
   const token = authHeader.split(" ")[1];
 
   try {
-    // 🔍 Firebase Admin SDKを使ってIDトークンの内容を検証・デコード
+    // 🔍 Verify and decode the ID token using the Firebase Admin SDK
     const decoded = await admin.auth().verifyIdToken(token);
 
-    // ✅ トークンが正しければ、デコードされたユーザー情報をreq.userにセット
+    // ✅ If the token is valid, attach the decoded user information to req.user
     console.log("✅ Firebase decoded user:", decoded);
     req.user = decoded;
 
-    // 次の処理へ
+    // Proceed to the next middleware or route handler
     next();
   } catch (error) {
-    // ❌ トークンの検証に失敗（期限切れ・改ざん・不正トークンなど）
+    // ❌ Token verification failed (e.g., expired, tampered with, or invalid token)
     console.error("Firebase token verification failed:", error);
     return res.status(401).json({ error: "Invalid token" });
   }
 };
 
-// 📦 他ファイルから使えるようにエクスポート
+// 📦 Export for use in other modules
 module.exports = verifyFirebaseOnly;

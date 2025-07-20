@@ -5,17 +5,17 @@ import { useAuth } from "../contexts/AuthContext";
 import { Link } from "react-router-dom";
 
 const Profile = () => {
-  const { user, token, setUserName } = useAuth(); // 🔐 認証情報と名前更新用関数
+  const { user, token, setUserName } = useAuth(); // 🔐 Authentication and name update function
   const [name, setName] = useState("");
   const [originalName, setOriginalName] = useState("");
   const [message, setMessage] = useState("");
 
-  // 🛍️ 自分の商品一覧関連ステート
+  // 🛍️ State for user's product listings
   const [myProducts, setMyProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productError, setProductError] = useState(null);
 
-  // 🖋️ ユーザー名の初期値設定
+  // 🖋️ Initialize username
   useEffect(() => {
     if (user) {
       setName(user.name);
@@ -23,7 +23,7 @@ const Profile = () => {
     }
   }, [user]);
 
-  // 📦 自分の商品一覧取得
+  // 📦 Fetch user's product list
   useEffect(() => {
     const fetchMyProducts = async () => {
       if (!token) return;
@@ -45,7 +45,7 @@ const Profile = () => {
     fetchMyProducts();
   }, [token]);
 
-  // 🖋️ ユーザー名更新
+  // 🖋️ Handle username update
   const handleUpdate = async () => {
     if (!name.trim()) {
       setMessage("名前は空にできません。");
@@ -74,7 +74,7 @@ const Profile = () => {
     }
   };
 
-  // 🛠️ 在庫更新処理
+  // 🛠️ Handle inventory update
   const [stockEdits, setStockEdits] = useState({});
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -106,10 +106,10 @@ const Profile = () => {
     }
   };
 
-  // 🖼️ UI描画部分
+  // 🖼️ UI rendering
   return (
     <div className="max-w-xl mx-auto p-6">
-      {/* 🔙 ホームに戻る */}
+      {/* 🔙 Back to Home */}
       <div className="mb-6">
         <Link
           to="/"
@@ -119,7 +119,7 @@ const Profile = () => {
         </Link>
       </div>
 
-      {/* 🙍‍♂️ ユーザー名編集 */}
+      {/* 🙍‍♂️ Edit username */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           名前
@@ -139,7 +139,7 @@ const Profile = () => {
         ✏️ 名前を更新
       </button>
 
-      {/* 🧾 注文履歴へ */}
+      {/* 🧾 Link to order history */}
       <div className="mt-6 mb-6">
         <Link
           to="/my-orders"
@@ -149,7 +149,7 @@ const Profile = () => {
         </Link>
       </div>
 
-      {/* 🛍️ 自分の商品と在庫編集 */}
+      {/* 🛍️ Product list and stock editor */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">自分の商品一覧</h2>
         {loadingProducts ? (
@@ -211,7 +211,7 @@ const Profile = () => {
         )}
       </section>
 
-      {/* ℹ️ 更新メッセージ表示 */}
+      {/* ℹ️ Update result message */}
       {message && (
         <p className="mt-4 text-sm text-gray-700 font-medium">{message}</p>
       )}

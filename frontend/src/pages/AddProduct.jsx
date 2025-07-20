@@ -5,29 +5,29 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 const AddProduct = () => {
-  // MongoDBのユーザー情報と認証トークンを取得
+  // Get MongoDB user data and authentication token
   const { user: mongoUser, token } = useAuth();
 
-  // 画像アップロード中かどうかを管理するフラグ
+  // Flag to indicate if an image is currently being uploaded
   const [uploading, setUploading] = useState(false);
 
-  // 商品情報フォームの状態
+  // State for the product form
   const [form, setForm] = useState({
     name: "",
     category: "",
     description: "",
-    imageUrl: "", // Cloudinaryのアップロード後にURLをセット
+    imageUrl: "", // URL is set after uploading to Cloudinary
     price: "",
   });
 
   const navigate = useNavigate();
 
-  // フォームの入力変更ハンドラー
+  // Handle input field changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 画像ファイルアップロード処理（Cloudinary）
+  // Handle image file upload to Cloudinary
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -35,59 +35,59 @@ const AddProduct = () => {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "mern-fashion-app-unsigned"); // Cloudinaryで設定したpreset名
+    formData.append("upload_preset", "mern-fashion-app-unsigned"); // Cloudinary upload preset name
 
     try {
       const res = await axios.post(
-        "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload", // cloud_nameを適宜変更
+        "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload", // Replace with your Cloudinary cloud name
         formData
       );
-      // アップロード成功した画像のURLをformにセット
+      // Set the uploaded image URL to form state
       setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
     } catch (err) {
-      console.error("アップロードエラー:", err);
-      alert("画像のアップロードに失敗しました");
+      console.error("Upload error:", err);
+      alert("Failed to upload image.");
     } finally {
       setUploading(false);
     }
   };
 
-  // フォーム送信時の処理
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ユーザー情報がまだ取得できていない場合の保険
+    // If user data hasn't loaded yet, prevent submission
     if (!mongoUser?._id) {
-      alert("ユーザー情報の取得中です。しばらくしてから再度お試しください。");
+      alert("User data is still loading. Please try again shortly.");
       return;
     }
 
     try {
-      // 送信データを整形
+      // Prepare data to submit
       const submitData = {
         ...form,
-        price: Number(form.price), // 価格は数値化
-        createdBy: mongoUser._id,  // 作成者IDをセット
+        price: Number(form.price), // Ensure price is a number
+        createdBy: mongoUser._id, // Attach creator's ID
       };
 
-      // APIへPOSTリクエスト（認証ヘッダー付き）
+      // Send POST request to API with authentication header
       await axios.post(`${import.meta.env.VITE_API_URL}/products`, submitData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      // 登録成功後にトップページへ遷移
+      // Redirect to home after successful submission
       navigate("/");
     } catch (err) {
-      console.error("登録エラー:", err);
-      alert("商品登録に失敗しました。");
+      console.error("Registration error:", err);
+      alert("Failed to add product.");
     }
   };
 
   return (
     <div className="max-w-md mx-auto p-4">
-      {/* ホームに戻るリンク */}
+      {/* Link to go back to home */}
       <div className="mb-6">
         <Link
           to="/"
@@ -99,7 +99,7 @@ const AddProduct = () => {
 
       <h2 className="text-xl font-bold mb-4">新しい商品を追加</h2>
 
-      {/* 商品追加フォーム */}
+      {/* Product submission form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -134,20 +134,18 @@ const AddProduct = () => {
           className="w-full p-2 border rounded"
         />
 
-        {/* 画像アップロード用インプット */}
+        {/* Image upload field */}
         <input
           type="file"
           accept="image/*"
           onChange={handleFileUpload}
           className="w-full"
         />
-        {uploading && (
-          <p className="text-sm text-gray-500">アップロード中...</p>
-        )}
+        {uploading && <p className="text-sm text-gray-500">Uploading...</p>}
         {form.imageUrl && (
           <img
             src={form.imageUrl}
-            alt="プレビュー"
+            alt="Preview"
             className="w-full h-auto rounded"
           />
         )}

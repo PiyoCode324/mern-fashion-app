@@ -1,43 +1,43 @@
 // models/User.js
 const mongoose = require("mongoose");
 
-// 👤 ユーザー情報を保存するためのスキーマ（設計図）
+// 👤 Schema (blueprint) for storing user information
 const userSchema = new mongoose.Schema(
   {
     uid: {
-      // Firebase Authentication から発行される一意のユーザーID（文字列）
+      // Unique user ID (string) provided by Firebase Authentication
       type: String,
       required: true,
       unique: true,
-      trim: true, // 前後の空白を自動で削除
+      trim: true, // Removes leading and trailing whitespace
     },
     name: {
-      // ユーザーの名前（任意でプロフィール画面などで使用）
+      // User's name (optional, used on profile screens, etc.)
       type: String,
       trim: true,
     },
     email: {
-      // ユーザーのメールアドレス（ログイン時に使用）
+      // User's email address (used for login)
       type: String,
-      required: true, // 必須項目
-      unique: true, // 同じメールアドレスは登録できない
+      required: true,
+      unique: true, // Prevents duplicate email registrations
       trim: true,
-      lowercase: true, // 自動的に小文字に変換
-      match: [/.+@.+\..+/, "有効なメールアドレスを入力してください"], // メール形式のバリデーション
-      index: true, // 検索を高速化するためのインデックス
+      lowercase: true, // Converts the email to lowercase automatically
+      match: [/.+@.+\..+/, "Please enter a valid email address"], // Validates email format
+      index: true, // Improves query performance
     },
-    // ⭐ ユーザーの権限（ロール）を管理するフィールド
+    // ⭐ Field for managing user roles
     role: {
-      // 'user'：一般ユーザー、'admin'：管理者としてアクセスできる
+      // 'user': general user access, 'admin': administrative access
       type: String,
-      enum: ["user", "admin"], // 指定した文字列のみ許可
-      default: "user", // 新規登録時は通常"user"が自動で設定される
+      enum: ["user", "admin"], // Only the specified values are allowed
+      default: "user", // Default role assigned on registration
     },
   },
   {
-    timestamps: true, // 作成日時（createdAt）と更新日時（updatedAt）を自動で追加
+    timestamps: true, // Automatically adds createdAt and updatedAt fields
   }
 );
 
-// モデルをエクスポート（アプリ全体で使用できるようにする）
+// Exports the model to be used throughout the application
 module.exports = mongoose.model("User", userSchema);

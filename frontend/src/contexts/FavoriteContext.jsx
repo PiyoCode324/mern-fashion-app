@@ -1,10 +1,11 @@
 // src/contexts/FavoriteContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 
-// Context の作成
-const FavoriteContext = createContext(null); // nullにしてProvider未使用時の警告を強化
+// Create a context for managing favorites
+// (Set to null to provide a clearer error when the provider is not used)
+const FavoriteContext = createContext(null);
 
-// カスタムフックで簡単に呼び出し可能に
+// Custom hook for accessing the favorite context
 export const useFavorite = () => {
   const context = useContext(FavoriteContext);
   if (!context) {
@@ -13,9 +14,9 @@ export const useFavorite = () => {
   return context;
 };
 
-// FavoriteProviderコンポーネント
+// FavoriteProvider component
 export const FavoriteProvider = ({ children }) => {
-  // localStorageからお気に入りリストを安全に復元
+  // Restore the favorites list from localStorage safely
   const [favorites, setFavorites] = useState(() => {
     try {
       const saved = localStorage.getItem("favorites");
@@ -26,24 +27,24 @@ export const FavoriteProvider = ({ children }) => {
     }
   });
 
-  // favoritesが変わったらlocalStorageに保存
+  // Save the updated favorites list to localStorage whenever it changes
   useEffect(() => {
     if (favorites) {
       localStorage.setItem("favorites", JSON.stringify(favorites));
     }
   }, [favorites]);
 
-  // productIdのトグル処理（お気に入りの追加・削除）
+  // Toggle a product ID in the favorites list (add or remove)
   const toggleFavorite = (productId) => {
     setFavorites(
       (prev) =>
         prev.includes(productId)
-          ? prev.filter((id) => id !== productId) // すでにあれば削除
-          : [...prev, productId] // なければ追加
+          ? prev.filter((id) => id !== productId) // Remove if already present
+          : [...prev, productId] // Add if not present
     );
   };
 
-  // 指定IDがお気に入りに含まれるか判定
+  // Check if a product is in the favorites list
   const isFavorite = (productId) => favorites.includes(productId);
 
   return (

@@ -4,53 +4,55 @@ const express = require("express");
 const router = express.Router();
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
 const User = require("../models/User");
-const admin = require("firebase-admin"); // Firebase Admin SDK を使ってユーザー管理
+const admin = require("firebase-admin"); // Firebase Admin SDK for user management
 
 // ================================
-// ユーザー関連APIルート
+// User-Related API Routes
 // ================================
 
-// ✅ ユーザー作成API（POST /api/users）
-// フロントからuid, name, emailを受け取り、DBにユーザーを作成します。
-// 既にuidが存在する場合はそのユーザーを返し、email重複があればエラー返す。
+// ✅ Create User API (POST /api/users)
+// Receives uid, name, and email from the frontend and creates a new user in the database.
+// If a user with the same uid already exists, it returns that user.
+// If the email is already in use by another account, it returns an error.
 router.post("/", async (req, res) => {
   const { uid, name, email } = req.body;
 
   try {
-    // 1. UIDで既存ユーザーを検索
+    // 1. Check if a user with the same UID already exists
     let existingUser = await User.findOne({ uid });
 
     if (existingUser) {
-      // 既存ユーザーがあればそのまま返す（重複作成防止）
+      // Return the existing user (prevents duplicates)
       return res.status(200).json(existingUser);
     }
 
-    // 2. UIDがなければメールアドレス重複をチェック
+    // 2. Check for duplicate email
     existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({
-        message: "このメールアドレスは既に他のアカウントで使用されています。",
+        message:
+          "This email address is already associated with another account.",
       });
     }
 
-    // 3. 新規ユーザーを作成してDBに保存
+    // 3. Create and save a new user
     const newUser = new User({ uid, name, email });
     await newUser.save();
     res.status(201).json(newUser);
   } catch (error) {
-    console.error("ユーザー登録エラー:", error);
+    console.error("User registration error:", error);
     res.status(500).json({
-      message: "ユーザー登録中にサーバーエラーが発生しました。",
+      message: "An error occurred while registering the user.",
       error: error.message,
     });
   }
 });
 
 // ================================
-// 自分のユーザー情報取得API（GET /api/users/me）
-// ログイン済みのユーザー本人の情報を返します
-// Firebaseトークンで認証し、DBからユーザーを検索。
-// Firebaseカスタムクレーム（role）とDBのroleを同期します。
+// Get Current User API (GET /api/users/me)
+// Returns information about the currently logged-in user.
+// Authenticates using the Firebase token and retrieves the user from the database.
+// Also syncs the role in Firebase custom claims with the role in the DB.
 // ================================
 router.get("/me", verifyFirebaseToken, async (req, res) => {
   console.log("🚀 GET /api/users/me endpoint hit.");
@@ -66,7 +68,7 @@ router.get("/me", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // FirebaseのカスタムクレームとDBのロールが異なれば更新する
+    // Sync role between DB and Firebase custom claims if different
     const firebaseUserRecord = await admin.auth().getUser(req.user.uid);
     const currentCustomClaims = firebaseUserRecord.customClaims;
     console.log(
@@ -79,36 +81,34 @@ router.get("/me", verifyFirebaseToken, async (req, res) => {
       (!currentCustomClaims || currentCustomClaims.role !== user.role)
     ) {
       console.log(
-        `💡 Updating Firebase Custom Claims for UID: ${user.uid} to role: ${user.role}`
+        `💡 Updating Firebase custom claims for UID: ${user.uid} to role: ${user.role}`
       );
       await admin.auth().setCustomUserClaims(user.uid, { role: user.role });
-      console.log("✅ Firebase Custom Claims updated.");
+      console.log("✅ Firebase custom claims updated.");
     } else if (!user.role && currentCustomClaims && currentCustomClaims.role) {
       console.log(
-        `💡 Clearing Firebase Custom Claims for UID: ${user.uid} (no role in DB)`
+        `💡 Clearing Firebase custom claims for UID: ${user.uid} (no role in DB)`
       );
-      await admin.auth().setCustomUserClaims(user.uid, {}); // ロールクレームをクリア
-      console.log("✅ Firebase Custom Claims cleared.");
+      await admin.auth().setCustomUserClaims(user.uid, {}); // Clear the role claim
+      console.log("✅ Firebase custom claims cleared.");
     } else {
-      console.log(
-        "ℹ️ Firebase Custom Claims already up-to-date or no role defined."
-      );
+      console.log("ℹ️ Firebase custom claims already up to date.");
     }
 
     res.json(user);
     console.log("✅ User data sent to frontend.");
   } catch (error) {
-    console.error("❌❌❌ ユーザー情報取得エラー:", error);
+    console.error("❌ Error fetching user info:", error);
     res.status(500).json({
-      message: "ユーザー情報の取得中にサーバーエラーが発生しました。",
+      message: "An error occurred while fetching user information.",
       error: error.message,
     });
   }
 });
 
 // ================================
-// ユーザー全体更新API（PUT /api/users/:uid）
-// 受け取った情報でDBのユーザー情報をまるごと更新
+// Update Full User Info API (PUT /api/users/:uid)
+// Replaces all user information in the DB with the provided data.
 // ================================
 router.put("/:uid", verifyFirebaseToken, async (req, res) => {
   try {
@@ -122,17 +122,17 @@ router.put("/:uid", verifyFirebaseToken, async (req, res) => {
     }
     res.json(updatedUser);
   } catch (error) {
-    console.error("ユーザー全体更新エラー:", error);
+    console.error("Full user update error:", error);
     res.status(500).json({
-      message: "ユーザー全体の更新中にサーバーエラーが発生しました。",
+      message: "An error occurred while updating user information.",
       error: error.message,
     });
   }
 });
 
 // ================================
-// ユーザー部分更新API（PATCH /api/users/:uid）
-// 一部のフィールドだけ更新する場合に使います
+// Partial User Update API (PATCH /api/users/:uid)
+// Updates specific user fields only.
 // ================================
 router.patch("/:uid", verifyFirebaseToken, async (req, res) => {
   try {
@@ -146,9 +146,9 @@ router.patch("/:uid", verifyFirebaseToken, async (req, res) => {
     }
     res.json(updatedUser);
   } catch (error) {
-    console.error("ユーザー部分更新エラー:", error);
+    console.error("Partial user update error:", error);
     res.status(500).json({
-      message: "ユーザー部分の更新中にサーバーエラーが発生しました。",
+      message: "An error occurred while updating user data.",
       error: error.message,
     });
   }

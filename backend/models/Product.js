@@ -1,49 +1,48 @@
 // models/Product.js
 const mongoose = require("mongoose");
 
-// 🛍️ 商品情報を保存するためのスキーマ定義
+// 🛍️ Schema definition for storing product information
 const productSchema = new mongoose.Schema({
   name: {
-    // 商品名（例：Tシャツ、イヤホンなど）
+    // Product name (e.g., T-shirt, earphones)
     type: String,
     required: true,
   },
   category: {
-    // 商品のカテゴリ（例：ファッション、家電など）
+    // Product category (e.g., fashion, electronics)
     type: String,
     required: true,
   },
   description: {
-    // 商品の説明文（任意）
+    // Product description (optional)
     type: String,
-    required: false,
   },
   imageUrl: {
-    // 商品画像のURL（画像アップロード時に生成される）
+    // URL of the product image (generated upon image upload)
     type: String,
     required: true,
   },
   price: {
-    // 商品の価格（例：1500円）
+    // Product price (e.g., 1500 yen)
     type: Number,
     required: true,
   },
   countInStock: {
-    // 在庫数（例：在庫が5個ある → 5）
+    // Available stock quantity (e.g., 5)
     type: Number,
     required: true,
-    default: 0, // 在庫数が未指定のときは0になる
+    default: 0, // Defaults to 0 if not specified
   },
   createdBy: {
-    // この商品を登録したユーザー（Userモデルを参照）
+    // Reference to the user who created this product (see User model)
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
 });
 
-// ✅ 上記スキーマを元に Product モデルを作成
+// ✅ Create the Product model from the schema
 const Product = mongoose.model("Product", productSchema);
 
-// モデルを外部ファイルでも使えるようにエクスポート
+// 📦 Export the model for use in other modules
 module.exports = Product;

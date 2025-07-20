@@ -1,31 +1,31 @@
 // middleware/authMiddleware.js
-// 🔐 Firebaseの認証トークンを検証して、ログイン中のユーザー情報を取得するためのミドルウェア
 
-const admin = require("firebase-admin"); // Firebase Admin SDK を使用してトークン検証
-const User = require("../models/User"); // MongoDB上のUserモデルを読み込み
+// 🔐 Middleware for verifying Firebase authentication tokens and retrieving logged-in user information.
+const admin = require("firebase-admin"); // 🔧 Token validation using the Firebase Admin SDK
+const User = require("../models/User"); // 🗂️ Load the User model from MongoDB
 
-// ✅ Firebaseトークンを検証するミドルウェア関数
+// ✅ Middleware function to validate Firebase ID tokens
 const verifyFirebaseToken = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization; // リクエストヘッダーから Authorization を取得
+    const authHeader = req.headers.authorization; // 📥 Get the Authorization header from the request
 
-    // ⚠️ Authorization ヘッダーが存在しない、または "Bearer " で始まっていない場合は拒否
+    // ⚠️ Reject if the Authorization header is missing or doesn't start with "Bearer "
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res
         .status(401)
         .json({ message: "Unauthorized: トークンが見つかりません" });
     }
 
-    // 🔍 トークン部分のみを取り出す（"Bearer abc123..." → "abc123..."）
+    // 🔍 Extract the token part ("Bearer abc123..." → "abc123...")
     const idToken = authHeader.split(" ")[1];
 
-    // 🛡️ Firebase Admin SDK を使ってトークンを検証（有効性・改ざんチェック）
+    // 🛡️ Verify the token's validity using the Firebase Admin SDK
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    // 🧑 FirebaseのUIDに基づいてMongoDBに登録されているユーザーを検索
+    // 🧑 Look up the user in MongoDB using the UID from the decoded token
     const mongoUser = await User.findOne({ uid: decodedToken.uid });
 
-    // ❌ Firebase上には存在するが、MongoDBに登録がない場合（新規ユーザーなど）は 404 を返す
+    // ❌ If the user exists in Firebase but not in MongoDB, return 404 (e.g., new user not yet registered)
     if (!mongoUser) {
       console.log(
         `MongoDBにユーザーが見つかりません (Firebase UID: ${decodedToken.uid})。新規ユーザーの可能性があります。`
@@ -35,11 +35,11 @@ const verifyFirebaseToken = async (req, res, next) => {
         .json({ message: "Not Found: ユーザー情報が見つかりません" });
     }
 
-    // ✅ 正常な場合、ユーザー情報を req.user に格納して次の処理へ
+    // ✅ Token and user are valid → attach user info to req.user and proceed
     req.user = mongoUser;
     next();
   } catch (error) {
-    // 🔐 トークンが無効・期限切れ・改ざんなどで失敗した場合
+    // 🔐 If the token is invalid, expired, or tampered with, return 401
     console.error("Token verification failed:", error);
     return res
       .status(401)
@@ -47,5 +47,5 @@ const verifyFirebaseToken = async (req, res, next) => {
   }
 };
 
-// 📦 他のファイルでも使えるようにエクスポート
+// 📦 Export the middleware for use in other files
 module.exports = { verifyFirebaseToken };

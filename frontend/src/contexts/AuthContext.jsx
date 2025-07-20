@@ -6,7 +6,7 @@ import axios from "axios";
 
 const AuthContext = createContext(null);
 
-// カスタムフックでコンテキストを簡単に利用可能に
+// Custom hook to easily access the AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
@@ -14,35 +14,30 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  // Firebaseのユーザーオブジェクト（Firebase Authenticationの情報）
+  // Firebase user object (authentication info)
   const [firebaseUser, setFirebaseUser] = useState(null);
-
-  // MongoDBに登録されたユーザー情報（カスタムのユーザーデータ）
+  // User info from MongoDB (custom user data)
   const [user, setUser] = useState(null);
-
-  // 表示用のユーザー名。未ログイン時は「ゲスト」
+  // Display name for the user; defaults to "ゲスト" if not logged in
   const [userName, setUserName] = useState("ゲスト");
-
-  // FirebaseのIDトークン（API呼び出し時に利用）
+  // Firebase ID token (used for API authentication)
   const [token, setToken] = useState(null);
-
-  // 認証・ユーザー情報読み込みのローディング状態
+  // Loading state for authentication and user info
   const [loading, setLoading] = useState(true);
-
-  // FirebaseユーザーはいるがMongoDBに登録されていない場合のフラグ
+  // Indicates whether the Firebase user is new (not yet registered in MongoDB)
   const [isNewFirebaseUser, setIsNewFirebaseUser] = useState(false);
 
   useEffect(() => {
-    // Firebaseの認証状態の変化を監視
+    // Listen for Firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setFirebaseUser(firebaseUser);
 
         try {
-          // ★トークンを強制更新することでカスタムクレームも最新に
+          // ★ Force token refresh to ensure updated custom claims
           const token = await firebaseUser.getIdToken(true);
 
-          // 開発用ログ出力
+          // Debug log for development
           console.log("🛡 Firebase User Info:");
           console.log("UID:", firebaseUser.uid);
           console.log("Email:", firebaseUser.email);
@@ -51,7 +46,7 @@ export const AuthProvider = ({ children }) => {
 
           setToken(token);
 
-          // API経由でMongoDBのユーザー情報を取得（認証トークン付与）
+          // Fetch user data from MongoDB API using the token
           const res = await axios.get("/api/users/me", {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -62,14 +57,14 @@ export const AuthProvider = ({ children }) => {
           setUserName(res.data.name || "ゲスト");
           setIsNewFirebaseUser(false);
         } catch (error) {
-          // MongoDBにユーザーがいない場合は新規ユーザーフラグを立てる
+          // If user is not found in MongoDB, treat as a new Firebase user
           if (error.response?.status === 404) {
             console.log("MongoDBに未登録のFirebaseユーザーです。");
             setUser(null);
             setUserName("ゲスト");
             setIsNewFirebaseUser(true);
           } else {
-            // その他のエラーはログに出してゲスト状態へ
+            // Handle other errors and fall back to guest state
             console.error("ユーザー情報取得エラー:", error);
             setUser(null);
             setUserName("ゲスト");
@@ -78,7 +73,7 @@ export const AuthProvider = ({ children }) => {
           setToken(null);
         }
       } else {
-        // Firebaseユーザーがいない（ログアウト時）は初期状態に戻す
+        // Reset all state when user is logged out
         setFirebaseUser(null);
         setUser(null);
         setUserName("ゲスト");
@@ -86,15 +81,15 @@ export const AuthProvider = ({ children }) => {
         setIsNewFirebaseUser(false);
       }
 
-      // 読み込み完了フラグをfalseにセット
+      // Mark loading as complete
       setLoading(false);
     });
 
-    // クリーンアップで監視解除
+    // Clean up the listener on unmount
     return () => unsubscribe();
   }, []);
 
-  // コンテキストで共有する値
+  // Values to be shared via context
   const value = {
     firebaseUser,
     user,
@@ -108,7 +103,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {/* ローディング中は簡易ローディング表示 */}
+      {/* Show a loading indicator while authentication is initializing */}
       {!loading ? children : <div>Loading...</div>}
     </AuthContext.Provider>
   );
