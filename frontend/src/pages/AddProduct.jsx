@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-toastify";
 
 const AddProduct = () => {
   // Get MongoDB user data and authentication token
@@ -46,7 +47,7 @@ const AddProduct = () => {
       setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Failed to upload image.");
+      toast.error("画像のアップロードに失敗しました。");
     } finally {
       setUploading(false);
     }
@@ -58,7 +59,9 @@ const AddProduct = () => {
 
     // If user data hasn't loaded yet, prevent submission
     if (!mongoUser?._id) {
-      alert("User data is still loading. Please try again shortly.");
+      toast.error(
+        "ユーザーデータを読み込み中です。少し待ってから再度お試しください。"
+      );
       return;
     }
 
@@ -80,8 +83,8 @@ const AddProduct = () => {
       // Redirect to home after successful submission
       navigate("/");
     } catch (err) {
-      console.error("Registration error:", err);
-      alert("Failed to add product.");
+      console.error("登録エラー:", err);
+      toast.error("商品の登録に失敗しました。");
     }
   };
 

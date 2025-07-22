@@ -7,39 +7,55 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const SignUp = () => {
-  // 🧾 Input Field State
-  const [name, setName] = useState(""); // user name
-  const [email, setEmail] = useState(""); // email address
-  const [password, setPassword] = useState(""); // password
-  const [error, setError] = useState(""); // error message
-  const navigate = useNavigate(); // For page navigation
+  // Input Field State
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
-  // 🚀 Handle user registration
+  // メール形式チェック用の簡易正規表現
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // バリデーション関数
+  const validate = () => {
+    const newErrors = {};
+    if (!name.trim()) {
+      newErrors.name = "名前は必須です。";
+    }
+    if (!email) {
+      newErrors.email = "メールアドレスは必須です。";
+    } else if (!validateEmail(email)) {
+      newErrors.email = "メールアドレスの形式が正しくありません。";
+    }
+    if (!password) {
+      newErrors.password = "パスワードは必須です。";
+    } else if (password.length < 6) {
+      newErrors.password = "パスワードは6文字以上で入力してください。";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSignUp = async (e) => {
     e.preventDefault();
-    setError("");
 
-    // ⚠️ Client-side validation
-    if (password.length < 6) {
-      setError("パスワードは6文字以上で入力してください。");
-      return;
-    }
+    if (!validate()) return;
 
     try {
-      // ✅ Create account with Firebase
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      // ✏️ Set user display name in Firebase
       await updateProfile(userCredential.user, { displayName: name });
 
       const user = userCredential.user;
-      const token = await user.getIdToken(); // Get Firebase ID token
+      const token = await user.getIdToken();
 
-      // 📨 Save user info to backend
       await axios.post(
         "/api/users",
         {
@@ -54,76 +70,73 @@ const SignUp = () => {
         }
       );
 
-      // 🎉 After registration, redirect to home page
+      toast.success("登録に成功しました！");
       navigate("/");
     } catch (err) {
       console.error("登録エラー:", err);
-
-      // ⚠️ Handle Firebase and API errors
       if (err.response?.status === 409) {
-        setError(err.response.data.message);
+        toast.error(err.response.data.message || "既に登録されています。");
       } else if (err.code === "auth/email-already-in-use") {
-        setError("このメールアドレスは既に使用されています。");
+        toast.error("このメールアドレスは既に使用されています。");
       } else {
-        setError("登録に失敗しました。もう一度お試しください。");
-        toast.error(
-          "サーバーエラーが発生しました。しばらくしてから再度お試しください。"
-        );
+        toast.error("登録に失敗しました。もう一度お試しください。");
       }
     }
   };
 
-  // 🖼️ Render UI
   return (
     <div className="max-w-md mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4">新規登録</h2>
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-
-      <form onSubmit={handleSignUp} className="space-y-4">
-        {/* 🙍‍♀️ Name input */}
+      <form onSubmit={handleSignUp} className="space-y-4" noValidate>
+        {/* Name input */}
         <div>
           <label className="block">名前</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full border border-gray-300 p-2 rounded"
+            className={`w-full border p-2 rounded ${
+              errors.name ? "border-red-500" : "border-gray-300"
+            }`}
           />
+          {errors.name && (
+            <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+          )}
         </div>
 
-        {/* 📧 Email input */}
+        {/* Email input */}
         <div>
           <label className="block">メールアドレス</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full border border-gray-300 p-2 rounded"
+            className={`w-full border p-2 rounded ${
+              errors.email ? "border-red-500" : "border-gray-300"
+            }`}
           />
+          {errors.email && (
+            <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+          )}
         </div>
 
-        {/* 🔑 Password input */}
+        {/* Password input */}
         <div>
           <label className="block">パスワード</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full border border-gray-300 p-2 rounded"
+            className={`w-full border p-2 rounded ${
+              errors.password ? "border-red-500" : "border-gray-300"
+            }`}
           />
-          {/* ⛔ Password length validation */}
-          {password && password.length < 6 && (
-            <p className="text-red-500 text-sm mt-1">
-              パスワードは6文字以上で入力してください。
-            </p>
+          {errors.password && (
+            <p className="text-red-600 text-sm mt-1">{errors.password}</p>
           )}
         </div>
 
-        {/* ✅ Submit registration */}
         <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"

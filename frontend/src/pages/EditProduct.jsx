@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-toastify";
 
 const EditProduct = () => {
   // Get product ID from route
@@ -36,7 +37,7 @@ const EditProduct = () => {
 
         // Only the product creator can edit
         if (res.data.createdBy._id !== currentUser._id) {
-          alert("この商品は編集できません");
+          toast.error("この商品は編集できません");
           navigate("/");
         } else {
           setLoading(false);
@@ -72,7 +73,7 @@ const EditProduct = () => {
       setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
     } catch (err) {
       console.error("Image upload error:", err);
-      alert("画像のアップロードに失敗しました");
+      toast.error("画像のアップロードに失敗しました");
     } finally {
       setUploading(false);
     }
@@ -90,7 +91,7 @@ const EditProduct = () => {
       navigate("/");
     } catch (err) {
       console.error("Update error:", err);
-      alert("商品更新に失敗しました。");
+      toast.error("商品更新に失敗しました。");
     }
   };
 

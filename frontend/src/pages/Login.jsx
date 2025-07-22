@@ -3,79 +3,104 @@ import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate, Link } from "react-router-dom";
+import { showError } from "../utils/showToast";
 
 const Login = () => {
-  // Form state: email, password, error message
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errors, setErrors] = useState({}); // バリデーションエラー管理
   const navigate = useNavigate();
 
-  // Handle form submission
+  // メール形式チェック用の簡易正規表現
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!email) {
+      newErrors.email = "メールアドレスは必須です。";
+    } else if (!validateEmail(email)) {
+      newErrors.email = "メールアドレスの形式が正しくありません。";
+    }
+
+    if (!password) {
+      newErrors.password = "パスワードは必須です。";
+    } else if (password.length < 6) {
+      newErrors.password = "パスワードは6文字以上で入力してください。";
+    }
+
+    setErrors(newErrors);
+    // エラーがなければtrue
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg(""); // Clear previous errors
+
+    if (!validate()) return; // バリデーションNGなら送信しない
 
     try {
-      // Sign in using Firebase email/password authentication
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/"); // Redirect to home on success
+      navigate("/");
     } catch (error) {
       console.error("Login error:", error.code);
-
-      // Show user-friendly error messages based on Firebase error codes
       switch (error.code) {
         case "auth/user-not-found":
-          setErrorMsg("このメールアドレスのアカウントは存在しません。");
+          showError("このメールアドレスのアカウントは存在しません。");
           break;
         case "auth/wrong-password":
-          setErrorMsg("パスワードが正しくありません。");
+          showError("パスワードが正しくありません。");
           break;
         case "auth/invalid-email":
-          setErrorMsg("メールアドレスの形式が正しくありません。");
+          showError("メールアドレスの形式が正しくありません。");
           break;
         case "auth/too-many-requests":
-          setErrorMsg(
+          showError(
             "ログイン試行が多すぎます。しばらくしてから再試行してください。"
           );
           break;
         default:
-          setErrorMsg("ログインに失敗しました。もう一度お試しください。");
+          showError("ログインに失敗しました。もう一度お試しください。");
       }
     }
   };
 
   return (
     <div className="max-w-md mx-auto mt-12 p-6 border rounded shadow">
-      {/* Page title */}
       <h2 className="text-2xl font-bold mb-6">ログイン</h2>
 
-      {/* Error message */}
-      {errorMsg && <p className="text-red-600 mb-4">{errorMsg}</p>}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+        <div>
+          <input
+            type="email"
+            placeholder="メールアドレス"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={`p-2 border rounded w-full ${
+              errors.email ? "border-red-500" : ""
+            }`}
+          />
+          {errors.email && (
+            <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+          )}
+        </div>
 
-      {/* Login form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* Email input */}
-        <input
-          type="email"
-          placeholder="メールアドレス"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="p-2 border rounded"
-        />
+        <div>
+          <input
+            type="password"
+            placeholder="パスワード"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={`p-2 border rounded w-full ${
+              errors.password ? "border-red-500" : ""
+            }`}
+          />
+          {errors.password && (
+            <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+          )}
+        </div>
 
-        {/* Password input */}
-        <input
-          type="password"
-          placeholder="パスワード"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="p-2 border rounded"
-        />
-
-        {/* Login button */}
         <button
           type="submit"
           className="bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
@@ -83,7 +108,6 @@ const Login = () => {
           ログイン
         </button>
 
-        {/* Signup link */}
         <p className="text-sm">
           アカウントをお持ちでない方は{" "}
           <Link to="/signup" className="text-blue-600 hover:underline">

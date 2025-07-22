@@ -1,10 +1,16 @@
 // src/components/Layout.jsx
 import React from "react";
 import Header from "./Header"; // Import the Header component
+import LoadingOverlay from "./LoadingOverlay";
+import { useLoading } from "../contexts/LoadingContext";
 
 const Layout = ({ userName, userRole, handleLogout, children }) => {
+  const { loading } = useLoading();
   return (
-    <div className="min-h-screen flex flex-col bg-white text-gray-800">
+    <div className="min-h-screen flex flex-col bg-white text-gray-800 relative">
+      {/* グローバルローディングUI */}
+      {loading && <LoadingOverlay />}
+
       {/* Pass userName, userRole, and logout handler to Header */}
       <Header
         userName={userName}

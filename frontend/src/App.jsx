@@ -22,6 +22,9 @@ import OrderComplete from "./pages/OrderComplete";
 import MyOrders from "./pages/MyOrders";
 import AdminDashboard from "./pages/AdminDashboard";
 import axios from "axios";
+import { LoadingProvider } from "./contexts/LoadingContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const navigate = useNavigate();
@@ -98,108 +101,111 @@ function App() {
 
   // 🧱 Define app-wide routing and layout
   return (
-    <Layout
-      userName={displayName} // 👤 Name shown in navigation
-      userRole={userRole} // 🛡️ Role: admin, user, etc.
-      handleLogout={handleLogout} // 🔓 Pass logout function to Layout
-    >
-      <Routes>
-        {/* 🏠 Home (product list) */}
-        <Route path="/" element={<ProductList />} />
+    <LoadingProvider>
+      <Layout
+        userName={displayName} // 👤 Name shown in navigation
+        userRole={userRole} // 🛡️ Role: admin, user, etc.
+        handleLogout={handleLogout} // 🔓 Pass logout function to Layout
+      >
+        <Routes>
+          {/* 🏠 Home (product list) */}
+          <Route path="/" element={<ProductList />} />
 
-        {/* ➕ Add product (requires authentication) */}
-        <Route
-          path="/add"
-          element={
-            <PrivateRoute>
-              <AddProduct />
-            </PrivateRoute>
-          }
-        />
+          {/* ➕ Add product (requires authentication) */}
+          <Route
+            path="/add"
+            element={
+              <PrivateRoute>
+                <AddProduct />
+              </PrivateRoute>
+            }
+          />
 
-        {/* 🧑‍💼 Profile page (requires authentication) */}
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          }
-        />
+          {/* 🧑‍💼 Profile page (requires authentication) */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
 
-        {/* 🛒 Cart page (requires authentication) */}
-        <Route
-          path="/cart"
-          element={
-            <PrivateRoute>
-              <Cart />
-            </PrivateRoute>
-          }
-        />
+          {/* 🛒 Cart page (requires authentication) */}
+          <Route
+            path="/cart"
+            element={
+              <PrivateRoute>
+                <Cart />
+              </PrivateRoute>
+            }
+          />
 
-        {/* ✅ Order confirmation (requires authentication) */}
-        <Route
-          path="/confirm"
-          element={
-            <PrivateRoute>
-              <ConfirmOrder />
-            </PrivateRoute>
-          }
-        />
+          {/* ✅ Order confirmation (requires authentication) */}
+          <Route
+            path="/confirm"
+            element={
+              <PrivateRoute>
+                <ConfirmOrder />
+              </PrivateRoute>
+            }
+          />
 
-        {/* 🎉 Order completion (requires authentication) */}
-        <Route
-          path="/complete"
-          element={
-            <PrivateRoute>
-              <OrderComplete />
-            </PrivateRoute>
-          }
-        />
+          {/* 🎉 Order completion (requires authentication) */}
+          <Route
+            path="/complete"
+            element={
+              <PrivateRoute>
+                <OrderComplete />
+              </PrivateRoute>
+            }
+          />
 
-        {/* 🧾 My orders list (requires authentication) */}
-        <Route
-          path="/my-orders"
-          element={
-            <PrivateRoute>
-              <MyOrders />
-            </PrivateRoute>
-          }
-        />
+          {/* 🧾 My orders list (requires authentication) */}
+          <Route
+            path="/my-orders"
+            element={
+              <PrivateRoute>
+                <MyOrders />
+              </PrivateRoute>
+            }
+          />
 
-        {/* 🛠️ Admin dashboard (requires authentication) */}
-        <Route
-          path="/admin"
-          element={
-            <PrivateRoute>
-              <AdminDashboard />
-            </PrivateRoute>
-          }
-        />
+          {/* 🛠️ Admin dashboard (requires authentication) */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
 
-        {/* 📝 Edit product (requires authentication) */}
-        <Route
-          path="/edit/:id"
-          element={
-            <PrivateRoute>
-              <EditProduct />
-            </PrivateRoute>
-          }
-        />
+          {/* 📝 Edit product (requires authentication) */}
+          <Route
+            path="/edit/:id"
+            element={
+              <PrivateRoute>
+                <EditProduct />
+              </PrivateRoute>
+            }
+          />
 
-        {/* ❤️ Favorites page (no authentication required) */}
-        <Route path="/favorites" element={<Favorites />} />
+          {/* ❤️ Favorites page (no authentication required) */}
+          <Route path="/favorites" element={<Favorites />} />
 
-        {/* 🆕 Sign-up page (no authentication required) */}
-        <Route path="/signup" element={<SignUp />} />
+          {/* 🆕 Sign-up page (no authentication required) */}
+          <Route path="/signup" element={<SignUp />} />
 
-        {/* 🔐 Login page (no authentication required) */}
-        <Route path="/login" element={<Login />} />
+          {/* 🔐 Login page (no authentication required) */}
+          <Route path="/login" element={<Login />} />
 
-        {/* 🔍 Product details (no authentication required) */}
-        <Route path="/products/:id" element={<ProductDetail />} />
-      </Routes>
-    </Layout>
+          {/* 🔍 Product details (no authentication required) */}
+          <Route path="/products/:id" element={<ProductDetail />} />
+        </Routes>
+      </Layout>
+      <ToastContainer />
+    </LoadingProvider>
   );
 }
 

@@ -2,55 +2,61 @@
 import React from "react";
 import { useCart } from "../contexts/CartContext";
 import { useNavigate } from "react-router-dom";
-
+import { toast } from "react-toastify";
 import { loadStripe } from "@stripe/stripe-js";
-// Initialize Stripe with your public key
+
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const ConfirmOrder = () => {
-  // Get items from cart
   const { cartItems } = useCart();
   const navigate = useNavigate();
 
-  // Calculate total price (price × quantity)
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  // Handle order confirmation
   const handleConfirm = async () => {
-    // Get Stripe object
-    const stripe = await stripePromise;
+    if (cartItems.length === 0) {
+      toast.warn("カートに商品がありません。");
+      return;
+    }
 
-    // Create a Checkout Session (POST to backend)
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/payment/create-checkout-session`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cartItems }), // Send cart data
+    try {
+      const stripe = await stripePromise;
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/payment/create-checkout-session`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: cartItems }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("決済セッションの作成に失敗しました。");
       }
-    );
 
-    // Get session info from the response
-    const session = await response.json();
+      const session = await response.json();
 
-    // Redirect to Stripe Checkout
-    await stripe.redirectToCheckout({ sessionId: session.id });
+      const result = await stripe.redirectToCheckout({ sessionId: session.id });
+      if (result.error) {
+        toast.error(result.error.message);
+      }
+    } catch (error) {
+      console.error("注文確定エラー:", error);
+      toast.error("注文の確定中にエラーが発生しました。再度お試しください。");
+    }
   };
 
-  // Show message if cart is empty
   if (cartItems.length === 0) {
     return <p className="p-6">カートに商品がありません。</p>;
   }
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      {/* Page title */}
       <h2 className="text-2xl font-bold mb-6">🧾 注文確認</h2>
 
-      {/* Cart item list */}
       <ul className="divide-y divide-gray-200 mb-6">
         {cartItems.map((item) => (
           <li key={item._id} className="py-4">
@@ -63,12 +69,10 @@ const ConfirmOrder = () => {
         ))}
       </ul>
 
-      {/* Total amount */}
       <p className="text-lg font-semibold mb-4">
         合計金額: ¥{totalAmount.toLocaleString()}
       </p>
 
-      {/* Confirm order button */}
       <button
         onClick={handleConfirm}
         className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
