@@ -67,6 +67,27 @@ const MyOrders = () => {
             </p>
             <p>合計金額: ¥{order.totalPrice.toLocaleString()}</p>
 
+            {/* 🔽 ステータス表示を追加 */}
+            <p className="mt-1 text-sm">
+              <span className="font-semibold">ステータス:</span>{" "}
+              <span
+                className={`inline-block px-2 py-1 rounded text-xs
+        ${
+          order.status === "未処理"
+            ? "bg-gray-200 text-gray-800"
+            : order.status === "処理中"
+            ? "bg-yellow-200 text-yellow-800"
+            : order.status === "発送済み"
+            ? "bg-green-200 text-green-800"
+            : order.status === "キャンセル"
+            ? "bg-red-200 text-red-800"
+            : ""
+        }`}
+              >
+                {order.status}
+              </span>
+            </p>
+
             {/* 🧾 注文内の商品 */}
             <ul className="ml-4 mt-2">
               {order.items.map((item, index) => (

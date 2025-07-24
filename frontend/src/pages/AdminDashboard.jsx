@@ -105,6 +105,31 @@ const AdminDashboard = () => {
     }
   };
 
+  // 注文ステータス更新処理
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await axios.patch(
+        `/api/orders/${orderId}/status`,
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // 状態を即座に反映
+      setOrders((prev) =>
+        prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
+      );
+
+      alert("注文ステータスを更新しました！");
+    } catch (err) {
+      console.error("ステータス更新エラー:", err.response?.data || err.message);
+      alert(
+        `ステータス更新に失敗しました: ${
+          err.response?.data?.message || err.message
+        }`
+      );
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       {/* ホームへ戻るリンク */}
@@ -194,6 +219,8 @@ const AdminDashboard = () => {
                 <th className="border border-gray-300 p-2">合計金額</th>
                 <th className="border border-gray-300 p-2">注文日時</th>
                 <th className="border border-gray-300 p-2">商品詳細</th>
+                <th className="border border-gray-300 p-2">ステータス</th>{" "}
+                {/* 追加 */}
               </tr>
             </thead>
             <tbody>
@@ -219,6 +246,20 @@ const AdminDashboard = () => {
                         {item.price?.toLocaleString()})
                       </div>
                     ))}
+                  </td>
+                  <td className="border border-gray-300 p-2">
+                    <select
+                      value={order.status}
+                      onChange={(e) =>
+                        handleStatusChange(order._id, e.target.value)
+                      }
+                      className="p-1 border rounded"
+                    >
+                      <option value="未処理">未処理</option>
+                      <option value="処理中">処理中</option>
+                      <option value="発送済み">発送済み</option>
+                      <option value="キャンセル">キャンセル</option>
+                    </select>
                   </td>
                 </tr>
               ))}

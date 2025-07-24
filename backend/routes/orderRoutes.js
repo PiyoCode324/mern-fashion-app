@@ -152,4 +152,47 @@ router.get("/", verifyFirebaseOnly, adminCheck, async (req, res) => {
   }
 });
 
+// 🔽 Route for updating order status (admin or order owner only)
+router.patch("/:id/status", verifyFirebaseOnly, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({ message: "注文が見つかりません" });
+    }
+
+    const userInDb = await User.findOne({ uid: req.user.uid });
+    if (!userInDb) {
+      return res.status(404).json({ message: "ユーザーが見つかりません" });
+    }
+
+    const isAdmin = userInDb?.role === "admin";
+    const isOwner = order.userUid.toString() === userInDb._id.toString();
+
+    if (!isAdmin && !isOwner) {
+      return res
+        .status(403)
+        .json({ message: "ステータス変更の権限がありません" });
+    }
+
+    order.status = status;
+    const updatedOrder = await order.save();
+
+    console.log(
+      `📝 注文 ${order._id} のステータスを「${status}」に更新しました`
+    );
+
+    res.status(200).json({
+      message: "注文ステータスを更新しました",
+      updatedOrder,
+    });
+  } catch (err) {
+    console.error("❌ ステータス更新エラー:", err);
+    res.status(500).json({ error: "注文ステータスの更新に失敗しました" });
+  }
+});
+
 module.exports = router;

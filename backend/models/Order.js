@@ -27,13 +27,11 @@ const orderItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema(
   {
     userUid: {
-      // Reference to the user who placed the order (see User model)
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
     items: {
-      // Array of ordered items (uses orderItemSchema)
       type: [orderItemSchema],
       required: true,
       validate: [
@@ -42,15 +40,18 @@ const orderSchema = new mongoose.Schema(
       ],
     },
     totalPrice: {
-      // Total amount of the order (sum of item prices × quantities)
       type: Number,
       required: true,
       min: [0, "Total price must be at least 0"],
     },
-    // 🕒 Timestamps for creation and update are added automatically
+    status: {
+      type: String,
+      enum: ["未処理", "処理中", "発送済み", "キャンセル"],
+      default: "未処理",
+    },
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
