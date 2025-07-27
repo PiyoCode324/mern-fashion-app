@@ -7,7 +7,9 @@ import { useLoading } from "../contexts/LoadingContext";
 const Layout = ({ userName, userRole, handleLogout, children }) => {
   const { loading } = useLoading();
   return (
-    <div className="min-h-screen flex flex-col bg-white text-gray-800 relative">
+    <div className="min-h-screen flex flex-col bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 relative">
+      {/* グローバルローディングUI */}
+      {loading && <LoadingOverlay />}
       {/* グローバルローディングUI */}
       {loading && <LoadingOverlay />}
 
@@ -23,11 +25,10 @@ const Layout = ({ userName, userRole, handleLogout, children }) => {
         {children}
       </main>
 
-      {/* 
-        Optional footer template – can be enabled later
-        <footer className="py-4 text-center text-sm text-gray-400">
-          &copy; {new Date().getFullYear()} MERN Fashion Store
-        </footer> 
+      {/* Optional Footer
+      <footer className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+        &copy; {new Date().getFullYear()} MERN Fashion Store
+      </footer>
       */}
     </div>
   );

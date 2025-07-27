@@ -6,15 +6,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 
 const EditProduct = () => {
-  // Get product ID from route
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Get authentication token and user info
-  const { token } = useAuth();
-  const { user: currentUser } = useAuth();
+  const { token, user: currentUser } = useAuth();
 
-  // Form state for product fields
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -23,20 +19,21 @@ const EditProduct = () => {
     price: "",
   });
 
-  // State for loading, error, and image upload
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch product details and check edit permissions
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products/${id}`)
       .then((res) => {
         setForm(res.data);
 
-        // Only the product creator can edit
-        if (res.data.createdBy._id !== currentUser._id) {
+        if (
+          res.data.createdBy._id !== currentUser._id &&
+          currentUser.role !== "admin" // 管理者ならOK
+        ) {
+          toast.dismiss();
           toast.error("この商品は編集できません");
           navigate("/");
         } else {
@@ -49,12 +46,10 @@ const EditProduct = () => {
       });
   }, [id, currentUser, navigate]);
 
-  // Update form state on input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Upload image to Cloudinary
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -62,14 +57,13 @@ const EditProduct = () => {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "mern-fashion-app-unsigned"); // Cloudinary preset
+    formData.append("upload_preset", "mern-fashion-app-unsigned");
 
     try {
       const res = await axios.post(
         "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload",
         formData
       );
-      // Set uploaded image URL
       setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
     } catch (err) {
       console.error("Image upload error:", err);
@@ -79,7 +73,6 @@ const EditProduct = () => {
     }
   };
 
-  // Submit updated product data
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -88,14 +81,17 @@ const EditProduct = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      navigate("/");
+      if (currentUser.role === "admin") {
+        navigate("/admin/products");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error("Update error:", err);
       toast.error("商品更新に失敗しました。");
     }
   };
 
-  // Show loading or error message
   if (loading) return <p>読み込み中...</p>;
   if (error) return <p>{error}</p>;
 
@@ -118,7 +114,6 @@ const EditProduct = () => {
 
       {/* Edit product form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Name input */}
         <input
           type="text"
           name="name"
@@ -129,7 +124,6 @@ const EditProduct = () => {
           required
         />
 
-        {/* Category select */}
         <select
           name="category"
           value={form.category}
@@ -145,7 +139,6 @@ const EditProduct = () => {
           <option value="bag">バッグ</option>
         </select>
 
-        {/* Description textarea */}
         <textarea
           name="description"
           placeholder="説明"
@@ -154,20 +147,16 @@ const EditProduct = () => {
           className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg min-h-[120px]"
         />
 
-        {/* Image upload */}
         <input
           type="file"
           accept="image/*"
           onChange={handleFileUpload}
           className="w-full"
         />
-
-        {/* Uploading message */}
         {uploading && (
           <p className="text-sm text-gray-500">アップロード中...</p>
         )}
 
-        {/* Preview uploaded image */}
         {form.imageUrl && (
           <img
             src={form.imageUrl}
@@ -176,7 +165,6 @@ const EditProduct = () => {
           />
         )}
 
-        {/* Price input */}
         <input
           type="number"
           name="price"
@@ -188,7 +176,6 @@ const EditProduct = () => {
           min="0"
         />
 
-        {/* Submit button */}
         <button
           type="submit"
           className="w-full bg-indigo-600 text-white py-3 rounded disabled:opacity-50 text-lg font-semibold"

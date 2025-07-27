@@ -25,6 +25,33 @@ import axios from "axios";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AdminProductList from "./components/Admin/AdminProductList"; // ←これ追加
+
+// 中略...
+
+<Routes>
+  <Route path="/" element={<ProductList />} />
+
+  <Route
+    path="/admin"
+    element={
+      <PrivateRoute>
+        <AdminDashboard />
+      </PrivateRoute>
+    }
+  />
+
+  <Route
+    path="/admin/products"
+    element={
+      <PrivateRoute>
+        <AdminProductList />
+      </PrivateRoute>
+    }
+  />
+
+  {/* 他のルート... */}
+</Routes>;
 
 function App() {
   const navigate = useNavigate();
@@ -177,6 +204,15 @@ function App() {
             element={
               <PrivateRoute>
                 <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/admin/products"
+            element={
+              <PrivateRoute>
+                <AdminProductList />
               </PrivateRoute>
             }
           />

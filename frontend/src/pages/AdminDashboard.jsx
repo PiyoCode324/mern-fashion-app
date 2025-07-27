@@ -3,20 +3,29 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
+import AdminOrderTable from "../components/Admin/AdminOrderTable";
+import AdminFilters from "../components/Admin/AdminFilters";
+import AdminProductList from "../components/Admin/AdminProductList";
+import AdminUserTable from "../components/Admin/AdminUserTable";
 
 const AdminDashboard = () => {
   // 認証情報（ユーザー情報、トークン、認証ロード状態）を取得
   const { user, token, loadingAuth } = useAuth();
   const navigate = useNavigate();
 
-  // 商品リスト、注文リスト、読み込み状態、エラー、在庫編集用入力値を管理
+  // 各種stateはすべてトップで呼び出し
+  const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stockEdits, setStockEdits] = useState({}); // 商品IDをキーにした一時的な在庫入力値
+  const [stockEdits, setStockEdits] = useState({});
+  const [filters, setFilters] = useState({
+    status: "",
+    username: "",
+  });
 
-  // 管理者以外はホームへリダイレクト
+  // 管理者以外はホームへリダイレクト（useEffectはトップで）
   useEffect(() => {
     if (!loadingAuth) {
       if (!user || user.role !== "admin") {
@@ -26,22 +35,26 @@ const AdminDashboard = () => {
     }
   }, [user, loadingAuth, navigate]);
 
-  // トークンと管理者ユーザーがいる場合に商品・注文データを取得
+  // 商品・注文・ユーザー一覧取得
   useEffect(() => {
     if (token && user?.role === "admin") {
       const fetchData = async () => {
         try {
           setLoading(true);
-          const [productsRes, ordersRes] = await Promise.all([
+          const [productsRes, ordersRes, usersRes] = await Promise.all([
             axios.get("/api/products/admin", {
               headers: { Authorization: `Bearer ${token}` },
             }),
             axios.get("/api/orders", {
               headers: { Authorization: `Bearer ${token}` },
             }),
+            axios.get("/api/users", {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
           ]);
           setProducts(productsRes.data);
           setOrders(ordersRes.data);
+          setUsers(usersRes.data);
           setError(null);
         } catch (err) {
           console.error(err);
@@ -54,7 +67,25 @@ const AdminDashboard = () => {
     }
   }, [token, user]);
 
-  // 認証処理またはデータ取得中はローディング表示
+  // 管理者権限トグル変更関数
+  const onRoleChange = async (userId, newRole) => {
+    try {
+      await axios.patch(
+        `/api/users/${userId}/role`,
+        { role: newRole },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, role: newRole } : u))
+      );
+      alert("権限を更新しました！");
+    } catch (err) {
+      console.error("権限更新エラー:", err.response?.data || err.message);
+      alert("権限の更新に失敗しました。");
+    }
+  };
+
+  // ローディングまたは認証ロード中は表示
   if (loadingAuth || loading) return <div>読み込み中...</div>;
 
   // エラー表示
@@ -130,13 +161,46 @@ const AdminDashboard = () => {
     }
   };
 
+  // 注文フィルター適用
+  const handleFilterApply = async () => {
+    try {
+      const res = await axios.get("/api/orders", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: filters,
+      });
+      setOrders(res.data);
+    } catch (err) {
+      console.error("注文フィルタ取得エラー:", err);
+      alert("注文の取得に失敗しました。");
+    }
+  };
+
+  const handleDelete = async (userId) => {
+    if (!window.confirm("本当にこのユーザーを削除しますか？")) return;
+
+    try {
+      // すでにtokenがあるならそれを使う。ないならuserから取得
+      const idToken = token || (user && (await user.getIdToken()));
+
+      await axios.delete(`/api/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // 削除後、ユーザー一覧から取り除く
+      setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
+    } catch (err) {
+      console.error("削除エラー:", err);
+      alert("削除に失敗しました。");
+    }
+  };
+
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="px-4 py-6 max-w-screen-lg mx-auto w-full">
       {/* ホームへ戻るリンク */}
       <div className="mb-6">
         <Link
           to="/"
-          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 text-sm rounded"
         >
           ホームに戻る
         </Link>
@@ -144,41 +208,38 @@ const AdminDashboard = () => {
 
       <h1 className="text-3xl font-bold mb-6">管理者ダッシュボード</h1>
 
+      <section className="mb-10">
+        <AdminProductList products={products} />
+      </section>
+
       {/* 商品一覧セクション */}
       <section className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4">商品一覧</h2>
         {products.length === 0 ? (
           <p>商品が登録されていません。</p>
         ) : (
-          <table className="w-full border-collapse border border-gray-300">
+          <table className="w-full border-collapse border border-gray-300 table-fixed">
             <thead>
-              <tr className="bg-gray-200">
-                <th className="border border-gray-300 p-2">ID</th>
-                <th className="border border-gray-300 p-2">商品名</th>
-                <th className="border border-gray-300 p-2">カテゴリー</th>
-                <th className="border border-gray-300 p-2">価格</th>
-                <th className="border border-gray-300 p-2">現在の在庫</th>
-                <th className="border border-gray-300 p-2">在庫管理</th>
-                <th className="border border-gray-300 p-2">作成者</th>
+              <tr className="bg-gray-200 text-sm">
+                <th className="border p-2 w-36">ID</th>
+                <th className="border p-2">商品名</th>
+                <th className="border p-2">カテゴリー</th>
+                <th className="border p-2">価格</th>
+                <th className="border p-2">在庫</th>
+                <th className="border p-2 w-40">在庫管理</th>
+                <th className="border p-2">作成者</th>
               </tr>
             </thead>
             <tbody>
               {products.map((product) => (
-                <tr key={product._id} className="text-center">
-                  <td className="border border-gray-300 p-2 text-sm">
-                    {product._id}
+                <tr key={product._id} className="text-center text-sm">
+                  <td className="border p-2 break-all">{product._id}</td>
+                  <td className="border p-2">{product.name}</td>
+                  <td className="border p-2">{product.category}</td>
+                  <td className="border p-2">
+                    ¥{product.price?.toLocaleString()}
                   </td>
-                  <td className="border border-gray-300 p-2">{product.name}</td>
-                  <td className="border border-gray-300 p-2">
-                    {product.category}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    ¥{product.price?.toLocaleString() || "0"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {product.countInStock}
-                  </td>
-                  <td className="border border-gray-300 p-2">
+                  <td className="border p-2">{product.countInStock}</td>
+                  <td className="border p-2">
                     <input
                       type="number"
                       min="0"
@@ -186,17 +247,19 @@ const AdminDashboard = () => {
                       onChange={(e) =>
                         handleStockChange(product._id, e.target.value)
                       }
-                      className="w-20 p-1 border rounded text-center"
+                      className="w-16 p-1 border rounded text-center text-sm"
                     />
                     <button
                       onClick={() => handleSaveStock(product._id)}
-                      className="ml-2 bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                      className="ml-1 bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
                     >
                       保存
                     </button>
                   </td>
-                  <td className="border border-gray-300 p-2">
-                    {product.createdBy?.name || "不明"}
+                  <td className="border p-2">
+                    <div className="whitespace-normal break-words">
+                      {product.createdBy?.name || "不明"}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -205,68 +268,21 @@ const AdminDashboard = () => {
         )}
       </section>
 
+      <AdminFilters
+        filters={filters}
+        setFilters={setFilters}
+        onFilterApply={handleFilterApply}
+      />
+
       {/* 注文一覧セクション */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">注文一覧</h2>
-        {orders.length === 0 ? (
-          <p>注文がありません。</p>
-        ) : (
-          <table className="w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="border border-gray-300 p-2">注文ID</th>
-                <th className="border border-gray-300 p-2">ユーザー名</th>
-                <th className="border border-gray-300 p-2">合計金額</th>
-                <th className="border border-gray-300 p-2">注文日時</th>
-                <th className="border border-gray-300 p-2">商品詳細</th>
-                <th className="border border-gray-300 p-2">ステータス</th>{" "}
-                {/* 追加 */}
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order._id} className="text-center">
-                  <td className="border border-gray-300 p-2 text-sm">
-                    {order._id}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {order.userUid?.name || "（不明なユーザー）"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    ¥{order.totalPrice?.toLocaleString() || "0"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {new Date(order.createdAt).toLocaleString()}
-                  </td>
-                  <td className="border border-gray-300 p-2 text-left">
-                    {order.items?.map((item) => (
-                      <div key={item._id}>
-                        {item.productId?.name || "不明な商品"} x {item.quantity}{" "}
-                        (¥
-                        {item.price?.toLocaleString()})
-                      </div>
-                    ))}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    <select
-                      value={order.status}
-                      onChange={(e) =>
-                        handleStatusChange(order._id, e.target.value)
-                      }
-                      className="p-1 border rounded"
-                    >
-                      <option value="未処理">未処理</option>
-                      <option value="処理中">処理中</option>
-                      <option value="発送済み">発送済み</option>
-                      <option value="キャンセル">キャンセル</option>
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      <AdminOrderTable orders={orders} token={token} setOrders={setOrders} />
+
+      {/* ユーザー一覧セクション */}
+      <AdminUserTable
+        users={users}
+        onRoleChange={onRoleChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };

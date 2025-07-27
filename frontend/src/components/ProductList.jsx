@@ -99,8 +99,10 @@ const ProductList = () => {
           <button
             key={cat}
             onClick={() => setCategory(cat)}
-            className={`px-3 py-1 rounded border ${
-              category === cat ? "bg-indigo-500 text-white" : "bg-white"
+            className={`px-3 py-1 rounded border transition ${
+              category === cat
+                ? "bg-indigo-500 text-white"
+                : "bg-white text-gray-800 dark:bg-gray-700 dark:text-white"
             }`}
           >
             {cat}
@@ -113,10 +115,14 @@ const ProductList = () => {
         <select
           value={priceRange}
           onChange={(e) => setPriceRange(e.target.value)}
-          className="border p-2 rounded"
+          className="border p-2 rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-white dark:border-gray-600"
         >
           {priceRanges.map((range) => (
-            <option key={range.value} value={range.value}>
+            <option
+              key={range.value}
+              value={range.value}
+              className="bg-white text-black dark:bg-gray-800 dark:text-white"
+            >
               {range.label}
             </option>
           ))}
@@ -130,7 +136,7 @@ const ProductList = () => {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="商品名や説明で検索"
-          className="border p-2 rounded w-full"
+          className="border p-2 rounded w-full bg-white text-gray-800 dark:bg-gray-700 dark:text-white dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-300"
         />
       </div>
 

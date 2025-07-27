@@ -1,21 +1,58 @@
 // src/components/Header.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 
 const Header = ({ handleLogout, userName, userRole }) => {
-  // Calculate the total number of items in the cart
   const { cartItems } = useCart();
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  return (
-    <header className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-gray-100 gap-4 sm:gap-0">
-      {/* Site title */}
-      <h1 className="text-xl font-bold text-center sm:text-left">商品一覧</h1>
+  // ダークモードの状態管理
+  const [isDark, setIsDark] = useState(() => {
+    // ページ初期表示時にlocalStorageかOS設定から初期値取得
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dark-mode");
+      if (saved !== null) return saved === "true";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
 
-      <div className="flex flex-wrap justify-center sm:justify-end gap-3">
-        {/* Display user's name */}
-        <span className="text-sm sm:text-base">ようこそ、{userName}さん！</span>
+  // ダークモードのクラス付け外しをDOMに反映
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    // localStorageに設定を保存
+    localStorage.setItem("dark-mode", isDark);
+  }, [isDark]);
+
+  // トグルハンドラー
+  const toggleDarkMode = () => setIsDark((prev) => !prev);
+
+  return (
+    <header className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-gray-100 dark:bg-gray-800 gap-4 sm:gap-0">
+      {/* サイトタイトル */}
+      <h1 className="text-xl font-bold text-center sm:text-left dark:text-white">
+        商品一覧
+      </h1>
+
+      <div className="flex flex-wrap justify-center sm:justify-end gap-3 items-center">
+        {/* ダークモードトグル */}
+        <button
+          onClick={toggleDarkMode}
+          className="px-3 py-1.5 rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+          aria-label="ダークモード切替"
+        >
+          {isDark ? "🌙" : "☀️"}
+        </button>
+
+        <span className="text-sm sm:text-base dark:text-gray-200">
+          ようこそ、{userName}さん！
+        </span>
 
         {/* Link to user profile */}
         <Link

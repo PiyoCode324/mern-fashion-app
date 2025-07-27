@@ -134,21 +134,38 @@ router.get("/my-orders", verifyFirebaseOnly, async (req, res) => {
 // 🔽 Route for admin to get all orders (admin access only)
 router.get("/", verifyFirebaseOnly, adminCheck, async (req, res) => {
   try {
-    // Fetch all orders and populate user and product information
-    const orders = await Order.find({})
-      .populate({
-        path: "userUid",
-        select: "name",
-      })
-      .populate({
-        path: "items.productId",
-        select: "name imageUrl",
-      });
+    const { status, userName, sort } = req.query;
+
+    const query = {};
+
+    // ステータスフィルタ
+    if (status) {
+      query.status = status;
+    }
+
+    // ユーザー名フィルタ
+    if (userName) {
+      const matchedUsers = await User.find({
+        name: { $regex: new RegExp(userName, "i") },
+      }).select("_id");
+
+      const userIds = matchedUsers.map((u) => u._id);
+
+      query.userUid = userIds.length > 0 ? { $in: userIds } : { $in: [] };
+    }
+
+    // 並び順の指定（デフォルトは desc）
+    const sortOrder = sort === "asc" ? 1 : -1;
+
+    const orders = await Order.find(query)
+      .populate({ path: "userUid", select: "name" })
+      .populate({ path: "items.productId", select: "name imageUrl" })
+      .sort({ createdAt: sortOrder }); // ← 並び替え適用！
 
     res.json(orders);
   } catch (err) {
-    console.error("❌ Error fetching all orders (admin):", err);
-    res.status(500).json({ error: "Failed to retrieve orders" });
+    console.error("❌ Error fetching filtered orders:", err);
+    res.status(500).json({ error: "注文の取得に失敗しました" });
   }
 });
 

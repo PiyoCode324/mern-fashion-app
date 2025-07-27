@@ -3,6 +3,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
+const adminCheck = require("../middleware/adminCheck");
 const User = require("../models/User");
 const admin = require("firebase-admin"); // Firebase Admin SDK for user management
 
@@ -151,6 +152,62 @@ router.patch("/:uid", verifyFirebaseToken, async (req, res) => {
       message: "An error occurred while updating user data.",
       error: error.message,
     });
+  }
+});
+
+// Get all users (Admin only)
+router.get("/", verifyFirebaseToken, async (req, res) => {
+  try {
+    const currentUser = await User.findOne({ uid: req.user.uid });
+
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admins only." });
+    }
+
+    const users = await User.find({}, "name email createdAt role uid"); // Select only needed fields
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
+router.patch("/:id/role", verifyFirebaseToken, adminCheck, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { role } = req.body;
+
+    if (!["admin", "user"].includes(role)) {
+      return res.status(400).json({ message: "不正なロール指定です。" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user)
+      return res.status(404).json({ message: "ユーザーが見つかりません。" });
+
+    user.role = role;
+    await user.save();
+
+    res.json({ message: "ユーザーの権限を更新しました。" });
+  } catch (err) {
+    console.error("ユーザー権限更新エラー:", err);
+    res.status(500).json({ message: "サーバーエラー" });
+  }
+});
+
+// DELETE /api/users/:id - ユーザー削除（管理者専用）
+router.delete("/:id", verifyFirebaseToken, adminCheck, async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "ユーザーが見つかりません。" });
+    }
+
+    res.json({ message: "ユーザーを削除しました。" });
+  } catch (err) {
+    console.error("ユーザー削除エラー:", err);
+    res.status(500).json({ message: "サーバーエラーが発生しました。" });
   }
 });
 

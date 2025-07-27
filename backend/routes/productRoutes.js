@@ -119,13 +119,14 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Only the creator can update
-    if (product.createdBy.toString() !== req.user._id.toString()) {
+    // ✅ 管理者 or 作成者 のみ許可
+    const isAdmin = req.user.role === "admin";
+    const isCreator = product.createdBy.toString() === req.user._id.toString();
+    if (!isAdmin && !isCreator) {
       return res
         .status(403)
         .json({ message: "You do not have permission to edit this product" });
     }
-
     // Update product fields
     const { name, category, description, imageUrl, price } = req.body;
     product.name = name;
