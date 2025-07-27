@@ -77,10 +77,16 @@ const Login = () => {
             placeholder="メールアドレス"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={`p-2 border rounded w-full ${
-              errors.email ? "border-red-500" : ""
-            }`}
+            className={`p-2 border rounded w-full
+    bg-white text-gray-800 placeholder-gray-400
+    dark:bg-gray-700 dark:text-white dark:placeholder-gray-300
+    ${
+      errors.email
+        ? "border-red-500 dark:border-red-400"
+        : "border-gray-300 dark:border-gray-600"
+    }`}
           />
+
           {errors.email && (
             <p className="text-red-600 text-sm mt-1">{errors.email}</p>
           )}
@@ -92,10 +98,16 @@ const Login = () => {
             placeholder="パスワード"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={`p-2 border rounded w-full ${
-              errors.password ? "border-red-500" : ""
-            }`}
+            className={`p-2 border rounded w-full
+    bg-white text-gray-800 placeholder-gray-400
+    dark:bg-gray-700 dark:text-white dark:placeholder-gray-300
+    ${
+      errors.password
+        ? "border-red-500 dark:border-red-400"
+        : "border-gray-300 dark:border-gray-600"
+    }`}
           />
+
           {errors.password && (
             <p className="text-red-600 text-sm mt-1">{errors.password}</p>
           )}
@@ -103,7 +115,7 @@ const Login = () => {
 
         <button
           type="submit"
-          className="bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+          className="bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 dark:hover:bg-indigo-500"
         >
           ログイン
         </button>
