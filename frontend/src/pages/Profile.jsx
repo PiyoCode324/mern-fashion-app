@@ -9,14 +9,12 @@ const Profile = () => {
   const [name, setName] = useState("");
   const [originalName, setOriginalName] = useState("");
   const [message, setMessage] = useState("");
-  const [nameError, setNameError] = useState(""); // 名前入力のエラー管理
+  const [nameError, setNameError] = useState("");
 
-  // 🛍️ State for user's product listings
   const [myProducts, setMyProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productError, setProductError] = useState(null);
 
-  // 初期名セット
   useEffect(() => {
     if (user) {
       setName(user.name);
@@ -26,7 +24,6 @@ const Profile = () => {
     }
   }, [user]);
 
-  // ユーザーの商品一覧取得
   useEffect(() => {
     const fetchMyProducts = async () => {
       if (!token) return;
@@ -47,7 +44,6 @@ const Profile = () => {
     fetchMyProducts();
   }, [token]);
 
-  // 名前バリデーション関数
   const validateName = (input) => {
     if (!input.trim()) {
       setNameError("名前は空にできません。");
@@ -57,7 +53,6 @@ const Profile = () => {
     return true;
   };
 
-  // 名前更新処理
   const handleUpdate = async () => {
     if (!validateName(name)) {
       setMessage("");
@@ -86,7 +81,6 @@ const Profile = () => {
     }
   };
 
-  // 在庫編集関連
   const [stockEdits, setStockEdits] = useState({});
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -119,20 +113,18 @@ const Profile = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      {/* 🔙 ホームへ戻るリンク */}
+    <div className="max-w-xl mx-auto p-6 text-gray-800 dark:text-white dark:bg-gray-900 rounded">
       <div className="mb-6">
         <Link
           to="/"
-          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
         >
           ホームに戻る
         </Link>
       </div>
 
-      {/* 名前編集フォーム */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           名前
         </label>
         <input
@@ -144,10 +136,16 @@ const Profile = () => {
             setMessage("");
           }}
           className={`w-full border rounded px-3 py-2 ${
-            nameError ? "border-red-500" : "border-gray-300"
-          }`}
+            nameError
+              ? "border-red-500 dark:border-red-400"
+              : "border-gray-300 dark:border-gray-600"
+          } bg-white dark:bg-gray-800 text-gray-800 dark:text-white`}
         />
-        {nameError && <p className="text-red-600 text-sm mt-1">{nameError}</p>}
+        {nameError && (
+          <p className="text-red-600 dark:text-red-400 text-sm mt-1">
+            {nameError}
+          </p>
+        )}
       </div>
 
       <button
@@ -157,12 +155,12 @@ const Profile = () => {
         ✏️ 名前を更新
       </button>
 
-      {/* 更新結果メッセージ */}
       {message && (
-        <p className="mt-4 text-sm text-gray-700 font-medium">{message}</p>
+        <p className="mt-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+          {message}
+        </p>
       )}
 
-      {/* 注文履歴リンク */}
       <div className="mt-6 mb-6">
         <Link
           to="/my-orders"
@@ -172,41 +170,52 @@ const Profile = () => {
         </Link>
       </div>
 
-      {/* 自分の商品一覧と在庫編集 */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">自分の商品一覧</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
+          自分の商品一覧
+        </h2>
         {loadingProducts ? (
           <p>読み込み中...</p>
         ) : productError ? (
-          <p className="text-red-600">{productError}</p>
+          <p className="text-red-600 dark:text-red-400">{productError}</p>
         ) : myProducts.length === 0 ? (
           <p>登録した商品はありません。</p>
         ) : (
-          <table className="w-full border-collapse border border-gray-300">
+          <table className="w-full border-collapse border border-gray-300 dark:border-gray-600">
             <thead>
-              <tr className="bg-gray-200">
-                <th className="border border-gray-300 p-2">商品名</th>
-                <th className="border border-gray-300 p-2">カテゴリ</th>
-                <th className="border border-gray-300 p-2">価格</th>
-                <th className="border border-gray-300 p-2">在庫数</th>
+              <tr className="bg-gray-200 dark:bg-gray-700">
+                <th className="border border-gray-300 dark:border-gray-600 p-2">
+                  商品名
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 p-2">
+                  カテゴリ
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 p-2">
+                  価格
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 p-2">
+                  在庫数
+                </th>
               </tr>
             </thead>
             <tbody>
               {myProducts.map((product) => (
                 <tr key={product._id} className="text-center">
-                  <td className="border border-gray-300 p-2">{product.name}</td>
-                  <td className="border border-gray-300 p-2">
+                  <td className="border border-gray-300 dark:border-gray-600 p-2">
+                    {product.name}
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 p-2">
                     {product.category}
                   </td>
-                  <td className="border border-gray-300 p-2">
+                  <td className="border border-gray-300 dark:border-gray-600 p-2">
                     ¥{product.price.toLocaleString()}
                   </td>
                   {product.createdBy === user._id && (
-                    <td className="border p-2 text-center">
+                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
                       <div className="flex items-center justify-center">
                         <input
                           type="number"
-                          className="w-20 border rounded p-1 text-center"
+                          className="w-20 border rounded p-1 text-center bg-white dark:bg-gray-800 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
                           value={
                             stockEdits[product._id] ?? product.countInStock
                           }

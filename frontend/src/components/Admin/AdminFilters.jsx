@@ -11,17 +11,17 @@ const AdminFilters = ({ filters, setFilters, onFilterApply }) => {
   };
 
   return (
-    <div className="mb-6 bg-gray-100 p-4 rounded">
+    <div className="mb-6 bg-gray-100 dark:bg-gray-800 p-4 rounded text-gray-800 dark:text-white">
       <h3 className="text-lg font-semibold mb-2">🔍 注文フィルター</h3>
       <div className="flex flex-wrap gap-6 items-end">
         {/* 日付順フィルター */}
         <div className="flex flex-col">
-          <label className="text-sm mb-1">日付順</label>
+          <label className="text-sm mb-1 dark:text-white">日付順</label>
           <select
             name="sort"
             value={filters.sort}
             onChange={handleChange}
-            className="border p-1 rounded"
+            className="border p-1 rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
           >
             <option value="desc">新しい順</option>
             <option value="asc">古い順</option>
@@ -30,12 +30,12 @@ const AdminFilters = ({ filters, setFilters, onFilterApply }) => {
 
         {/* ステータスフィルター */}
         <div className="flex flex-col">
-          <label className="text-sm mb-1">ステータス</label>
+          <label className="text-sm mb-1 dark:text-white">ステータス</label>
           <select
             name="status"
             value={filters.status}
             onChange={handleChange}
-            className="border p-1 rounded"
+            className="border p-1 rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
           >
             <option value="">すべて</option>
             <option value="未処理">未処理</option>
@@ -47,14 +47,14 @@ const AdminFilters = ({ filters, setFilters, onFilterApply }) => {
 
         {/* ユーザー名検索 */}
         <div className="flex flex-col">
-          <label className="text-sm mb-1">ユーザー名</label>
+          <label className="text-sm mb-1 dark:text-white">ユーザー名</label>
           <input
             type="text"
             name="userName"
             value={filters.userName}
             onChange={handleChange}
             placeholder="田中 など"
-            className="border p-1 rounded"
+            className="border p-1 rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
           />
         </div>
 

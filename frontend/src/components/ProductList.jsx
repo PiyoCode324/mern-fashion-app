@@ -4,12 +4,20 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ProductCard from "./ProductCard";
 import { useAuth } from "../contexts/AuthContext"; // AuthContextをインポート
+import Spinner from "./common/Spinner"; // スピナーをインポート
 
 const ProductList = () => {
   // State for storing product list
   const [products, setProducts] = useState([]);
   // Category filter state (default is "all")
   const [category, setCategory] = useState("all");
+  // Price range narrowing state
+  const [priceRange, setPriceRange] = useState("all");
+  // Keyword search state
+  const [keyword, setKeyword] = useState("");
+  // ローディング状態（商品取得時）
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
   // Get Firebase authentication user information and authentication loading status
   const { firebaseUser, loadingAuth } = useAuth();
 
@@ -22,6 +30,8 @@ const ProductList = () => {
       }
 
       try {
+        setLoadingProducts(true); // ローディング開始
+
         let headers = {};
         if (firebaseUser) {
           // If the user is logged in, get the latest ID token and set it in the authorization header.
@@ -34,7 +44,6 @@ const ProductList = () => {
           console.log(
             "ユーザーがログインしていません。認証なしで商品を取得します。"
           );
-          // Processing for products that do not require authentication can be added here
         }
 
         // Get product list from API (with authentication header)
@@ -47,7 +56,8 @@ const ProductList = () => {
         setProducts(res.data);
       } catch (err) {
         console.error("商品の取得に失敗しました:", err);
-        // Consider redirecting to the login screen or sending a notification in response to errors such as 401
+      } finally {
+        setLoadingProducts(false); // ローディング完了
       }
     };
 
@@ -56,10 +66,6 @@ const ProductList = () => {
 
   // Product Category List
   const categories = ["all", "tops", "bottoms", "accessory", "hat", "bag"];
-  // Price range narrowing state
-  const [priceRange, setPriceRange] = useState("all");
-  // Keyword search state
-  const [keyword, setKeyword] = useState("");
 
   // Apply multiple filters to the retrieved product list
   const filteredProducts = products
@@ -140,14 +146,16 @@ const ProductList = () => {
         />
       </div>
 
-      {/* Display the filtered product list */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {filteredProducts.map((product) => (
-          <Link key={product._id} to={`/products/${product._id}`}>
-            <ProductCard product={product} />
-          </Link>
-        ))}
-      </div>
+      {/* スピナー表示 or 商品リスト表示 */}
+      {loadingProducts ? (
+        <Spinner />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {filteredProducts.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

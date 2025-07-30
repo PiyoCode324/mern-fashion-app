@@ -5,16 +5,23 @@ const router = express.Router();
 const Product = require("../models/Product");
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
 const adminCheck = require("../middleware/adminCheck"); // Middleware to check for admin privileges
+const Order = require("../models/Order");
 
 // ✅ Public: Get all products (accessible to anyone)
-router.get("/", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    // Retrieve all products from the database, along with the creator's name
-    const products = await Product.find({}).populate("createdBy", "name");
-    res.json(products);
+    const product = await Product.findById(req.params.id)
+      .populate("createdBy", "name")
+      .populate("reviews.user", "name"); // ✅ これを追加！
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(product);
   } catch (err) {
-    console.error("Error fetching public product list:", err);
-    res.status(500).json({ message: "Failed to fetch product list" });
+    console.error("Error fetching product details:", err);
+    res.status(500).json({ message: "Failed to fetch product details" });
   }
 });
 
@@ -175,6 +182,71 @@ router.patch("/:id/stock", verifyFirebaseToken, async (req, res) => {
   } catch (err) {
     console.error("Error updating stock:", err);
     res.status(500).json({ message: "Failed to update stock" });
+  }
+});
+
+// 📌 レビュー追加エンドポイント
+router.post("/:id/reviews", verifyFirebaseToken, async (req, res) => {
+  const { rating, comment } = req.body;
+
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: "商品が見つかりません。" });
+    }
+
+    // ユーザーが既にレビューしているか確認
+    const alreadyReviewed = product.reviews?.find(
+      (r) => r.user.toString() === req.user._id.toString()
+    );
+
+    if (alreadyReviewed) {
+      return res.status(400).json({ message: "既にレビュー済みです。" });
+    }
+
+    const newReview = {
+      name: req.user.name || "匿名",
+      rating: Number(rating),
+      comment,
+      user: req.user._id,
+    };
+
+    // 配列がなければ初期化
+    if (!product.reviews) product.reviews = [];
+
+    product.reviews.push(newReview);
+    product.numReviews = product.reviews.length;
+    product.averageRating =
+      product.reviews.reduce((acc, r) => r.rating + acc, 0) /
+      product.reviews.length;
+
+    await product.save();
+
+    res.status(201).json({ message: "レビューを追加しました。" });
+  } catch (err) {
+    console.error("レビュー追加エラー:", err);
+    res.status(500).json({ message: "レビュー追加に失敗しました。" });
+  }
+});
+
+// 購入済み判定API
+router.get("/:id/hasPurchased", verifyFirebaseToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const productId = req.params.id;
+
+    const orders = await Order.find({
+      userUid: userId,
+      status: { $ne: "キャンセル" }, // キャンセル以外
+      "items.productId": productId, // 注文内に対象商品あり
+    });
+
+    const hasPurchased = orders.length > 0;
+    res.json({ hasPurchased });
+  } catch (error) {
+    console.error("購入済み判定エラー:", error);
+    res.status(500).json({ message: "購入履歴の取得に失敗しました" });
   }
 });
 

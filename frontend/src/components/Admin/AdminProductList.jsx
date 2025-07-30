@@ -4,8 +4,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import ProductCard from "../ProductCard";
-import { useAuth } from "../../contexts/AuthContext"; // 認証Context
-import ProductDetail from "../ProductDetail";
+import { useAuth } from "../../contexts/AuthContext";
 
 const AdminProductList = () => {
   const [products, setProducts] = useState([]);
@@ -41,7 +40,6 @@ const AdminProductList = () => {
     fetchProducts();
   }, [firebaseUser, loadingAuth]);
 
-  // カテゴリや価格・キーワードでのフィルタ処理
   const filteredProducts = products
     .filter((product) =>
       category === "all" ? true : product.category === category
@@ -69,7 +67,7 @@ const AdminProductList = () => {
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto text-gray-800 dark:text-white">
       <h2 className="text-2xl font-bold mb-6">🛠 商品一覧（管理者）</h2>
 
       {/* フィルタ操作エリア */}
@@ -80,8 +78,10 @@ const AdminProductList = () => {
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`px-3 py-1 rounded border ${
-                category === cat ? "bg-indigo-600 text-white" : "bg-white"
+              className={`px-3 py-1 rounded border dark:border-gray-600 ${
+                category === cat
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white dark:bg-gray-800 dark:text-white"
               }`}
             >
               {cat}
@@ -93,7 +93,7 @@ const AdminProductList = () => {
         <select
           value={priceRange}
           onChange={(e) => setPriceRange(e.target.value)}
-          className="border p-2 rounded"
+          className="border p-2 rounded dark:bg-gray-800 dark:text-white dark:border-gray-600"
         >
           {priceRanges.map((range) => (
             <option key={range.value} value={range.value}>
@@ -108,36 +108,27 @@ const AdminProductList = () => {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="商品名・説明で検索"
-          className="border p-2 rounded w-64"
+          className="border p-2 rounded w-64 dark:bg-gray-800 dark:text-white dark:border-gray-600"
         />
       </div>
 
-      {/* 商品リスト */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {filteredProducts.map((product) => (
-          <div key={product._id} className="relative">
-            <ProductCard product={product} />
-            <div className="absolute top-2 right-2 flex gap-2">
-              <Link
-                to={`/admin/products/edit/${product._id}`}
-                className="bg-yellow-400 text-white px-2 py-1 rounded text-sm"
-              >
-                編集
-              </Link>
+      {/* 商品リスト全体を囲むdivに overflow-x-auto を追加 */}
+      <div className="overflow-x-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {filteredProducts.map((product) => (
+            <div key={product._id} className="relative">
+              <ProductCard product={product} />
+              <div className="absolute top-2 right-2 flex gap-2">
+                <Link
+                  to={`/edit/${product._id}`}
+                  className="bg-yellow-400 text-white px-2 py-1 rounded text-sm"
+                >
+                  編集
+                </Link>
+              </div>
             </div>
-
-            <div className="absolute top-2 right-2 flex gap-2">
-              <Link
-                to={`/edit/${product._id}`}
-                className="bg-yellow-400 text-white px-2 py-1 rounded text-sm"
-              >
-                編集
-              </Link>
-
-              {/* 削除ボタンなどは必要に応じて */}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

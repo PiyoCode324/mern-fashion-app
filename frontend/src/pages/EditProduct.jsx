@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
+import Spinner from "../components/common/Spinner";
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -31,7 +32,7 @@ const EditProduct = () => {
 
         if (
           res.data.createdBy._id !== currentUser._id &&
-          currentUser.role !== "admin" // 管理者ならOK
+          currentUser.role !== "admin"
         ) {
           toast.dismiss();
           toast.error("この商品は編集できません");
@@ -92,23 +93,23 @@ const EditProduct = () => {
     }
   };
 
-  if (loading) return <p>読み込み中...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <Spinner />;
+  if (error) return <p className="text-red-500 dark:text-red-400">{error}</p>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 sm:p-8">
+    <div className="max-w-2xl mx-auto p-6 sm:p-8 bg-white dark:bg-gray-900 rounded shadow-md">
       {/* Back to Home */}
       <div className="mb-6">
         <Link
           to="/"
-          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+          className="inline-block bg-gray-300 hover:bg-gray-400 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 px-4 py-2 rounded transition-colors"
         >
           ホームに戻る
         </Link>
       </div>
 
       {/* Page title */}
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center sm:text-left">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center sm:text-left text-gray-900 dark:text-gray-100">
         商品を編集
       </h2>
 
@@ -120,7 +121,7 @@ const EditProduct = () => {
           placeholder="商品名"
           value={form.name}
           onChange={handleChange}
-          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg"
+          className="w-full p-3 sm:p-4 border border-gray-300 dark:border-gray-700 rounded text-base sm:text-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
           required
         />
 
@@ -128,10 +129,12 @@ const EditProduct = () => {
           name="category"
           value={form.category}
           onChange={handleChange}
-          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg"
+          className="w-full p-3 sm:p-4 border border-gray-300 dark:border-gray-700 rounded text-base sm:text-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
           required
         >
-          <option value="">カテゴリ</option>
+          <option value="" className="text-gray-700 dark:text-gray-300">
+            カテゴリ
+          </option>
           <option value="tops">トップス</option>
           <option value="bottoms">ボトムス</option>
           <option value="accessory">アクセサリー</option>
@@ -144,17 +147,19 @@ const EditProduct = () => {
           placeholder="説明"
           value={form.description}
           onChange={handleChange}
-          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg min-h-[120px]"
+          className="w-full p-3 sm:p-4 border border-gray-300 dark:border-gray-700 rounded text-base sm:text-lg min-h-[120px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
         />
 
         <input
           type="file"
           accept="image/*"
           onChange={handleFileUpload}
-          className="w-full"
+          className="w-full text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
         />
         {uploading && (
-          <p className="text-sm text-gray-500">アップロード中...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            アップロード中...
+          </p>
         )}
 
         {form.imageUrl && (
@@ -171,14 +176,14 @@ const EditProduct = () => {
           placeholder="価格"
           value={form.price}
           onChange={handleChange}
-          className="w-full p-3 sm:p-4 border rounded text-base sm:text-lg"
+          className="w-full p-3 sm:p-4 border border-gray-300 dark:border-gray-700 rounded text-base sm:text-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
           required
           min="0"
         />
 
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-3 rounded disabled:opacity-50 text-lg font-semibold"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white py-3 rounded disabled:opacity-50 text-lg font-semibold transition-colors"
           disabled={uploading}
         >
           更新する
