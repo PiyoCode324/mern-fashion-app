@@ -1,3 +1,4 @@
+// src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
@@ -7,6 +8,9 @@ import AdminFilters from "../components/Admin/AdminFilters";
 import AdminProductList from "../components/Admin/AdminProductList";
 import AdminUserTable from "../components/Admin/AdminUserTable";
 import Spinner from "../components/common/Spinner";
+import SalesChart from "../components/Admin/SalesChart";
+import TopProductsChart from "../components/Admin/TopProductsChart";
+import CategorySalesChart from "../components/Admin/CategorySalesChart";
 
 const AdminDashboard = () => {
   const { user, token, loadingAuth } = useAuth();
@@ -207,11 +211,10 @@ const AdminDashboard = () => {
         {products.length === 0 ? (
           <p>商品が登録されていません。</p>
         ) : (
-          // ★ここが変更点！ table要素をdiv.overflow-x-autoで囲みます
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 whitespace-nowrap">
-              {" "}
-              {/* table-fixed を削除し、必要であれば whitespace-nowrap を追加 */}
+              {/* ★ここを修正します。`{" "}` を削除するか、タグを密着させます。 */}
+              {/* <table ...>{" "}<thead>...</table> の {" "} を削除 */}
               <thead>
                 <tr className="bg-gray-200 dark:bg-gray-700 text-sm text-gray-800 dark:text-white">
                   <th className="border p-2 w-36 dark:border-gray-600">ID</th>
@@ -274,7 +277,6 @@ const AdminDashboard = () => {
           </div>
         )}
       </section>
-
       <AdminFilters
         filters={filters}
         setFilters={setFilters}
@@ -289,6 +291,10 @@ const AdminDashboard = () => {
         onRoleChange={onRoleChange}
         onDelete={handleDelete}
       />
+
+      <SalesChart token={token} />
+      <TopProductsChart token={token} />
+      <CategorySalesChart token={token} />
     </div>
   );
 };

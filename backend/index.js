@@ -17,8 +17,7 @@ const productRoutes = require("./routes/productRoutes");
 const userRoutes = require("./routes/userRoutes");
 const paymentRoutes = require("./routes/payment");
 const orderRoutes = require("./routes/orderRoutes");
-
-// * authMiddleware and adminCheck are imported within each route file, not here
+const salesRoutes = require("./routes/salesRoutes"); // ✅ 追加：売上集計ルート
 
 // ✅ Create the Express app instance
 const app = express();
@@ -31,8 +30,8 @@ app.use(
       "http://localhost:5173", // Local frontend for development
       "https://mern-fashion-app-frontend.onrender.com", // Production frontend
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
-    credentials: true, // Enable sending credentials
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
   })
 );
 
@@ -63,6 +62,9 @@ app.use("/api/payment", paymentRoutes);
 
 console.log("Applying /api/orders routes");
 app.use("/api/orders", orderRoutes);
+
+console.log("Applying /api/sales routes"); // ✅ 追加：ログ出力
+app.use("/api/sales", salesRoutes); // ✅ 追加：売上集計ルートを登録
 
 // ✅ Start the Express server on the specified port (default: 5000)
 const PORT = process.env.PORT || 5000;

@@ -4,15 +4,66 @@ const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
 const { verifyFirebaseToken } = require("../middleware/authMiddleware");
-const adminCheck = require("../middleware/adminCheck"); // Middleware to check for admin privileges
+const adminCheck = require("../middleware/adminCheck");
 const Order = require("../models/Order");
 
-// ✅ Public: Get all products (accessible to anyone)
+// --- 変更点ここから ---
+
+// ✅ Admin only: Get all products (for admin panel) - 固定パスは先に
+router.get("/admin", verifyFirebaseToken, adminCheck, async (req, res) => {
+  try {
+    console.log(
+      "DEBUG: GET /api/products/admin (管理者用商品一覧) ルートに到達しました。"
+    );
+    const products = await Product.find().populate({
+      path: "createdBy",
+      select: "name", // Show creator name
+    });
+    res.json(products);
+  } catch (err) {
+    console.error("Error fetching admin product list:", err);
+    res.status(500).json({ message: "Failed to fetch product list" });
+  }
+});
+
+// 📌 Get all products created by the logged-in user - 固定パスは先に
+router.get("/mine", verifyFirebaseToken, async (req, res) => {
+  try {
+    console.log(
+      "DEBUG: GET /api/products/mine (ユーザー作成商品) ルートに到達しました。"
+    );
+    // Filter products by creator ID (current user)
+    const products = await Product.find({ createdBy: req.user._id });
+    res.json(products);
+  } catch (err) {
+    console.error("Error fetching user's own products:", err);
+    res.status(500).json({ message: "Failed to fetch your products" });
+  }
+});
+
+// ✅ Public: Get ALL products (accessible to anyone)
+router.get("/", async (req, res) => {
+  try {
+    console.log(
+      "DEBUG: GET /api/products (すべての商品) ルートに到達しました。"
+    );
+    const products = await Product.find({}); // すべての商品を取得
+    res.json(products);
+  } catch (err) {
+    console.error("Error fetching all products:", err);
+    res.status(500).json({ message: "Failed to fetch all products" });
+  }
+});
+
+// ✅ Public: Get product by ID (accessible to anyone) - パスパラメータを持つルートは後に
 router.get("/:id", async (req, res) => {
   try {
+    console.log(
+      `DEBUG: GET /api/products/${req.params.id} (個別商品) ルートに到達しました。`
+    );
     const product = await Product.findById(req.params.id)
       .populate("createdBy", "name")
-      .populate("reviews.user", "name"); // ✅ これを追加！
+      .populate("reviews.user", "name");
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -21,9 +72,14 @@ router.get("/:id", async (req, res) => {
     res.json(product);
   } catch (err) {
     console.error("Error fetching product details:", err);
+    if (err.name === "CastError") {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
     res.status(500).json({ message: "Failed to fetch product details" });
   }
 });
+
+// --- 変更点ここまで ---
 
 // 📌 Create a new product (only available to logged-in users)
 router.post("/", verifyFirebaseToken, async (req, res) => {
@@ -51,34 +107,7 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// ✅ Admin only: Get all products (for admin panel)
-router.get("/admin", verifyFirebaseToken, adminCheck, async (req, res) => {
-  try {
-    // Controlled by adminCheck middleware
-    const products = await Product.find().populate({
-      path: "createdBy",
-      select: "name", // Show creator name
-    });
-    res.json(products);
-  } catch (err) {
-    console.error("Error fetching admin product list:", err);
-    res.status(500).json({ message: "Failed to fetch product list" });
-  }
-});
-
-// 📌 Get all products created by the logged-in user
-router.get("/mine", verifyFirebaseToken, async (req, res) => {
-  try {
-    // Filter products by creator ID (current user)
-    const products = await Product.find({ createdBy: req.user._id });
-    res.json(products);
-  } catch (err) {
-    console.error("Error fetching user's own products:", err);
-    res.status(500).json({ message: "Failed to fetch your products" });
-  }
-});
-
-// 📌 Delete a product (only the creator can delete)
+// 📌 Delete a product
 router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -86,7 +115,6 @@ router.delete("/:id", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Only the creator is allowed to delete
     if (product.createdBy.toString() !== req.user._id.toString()) {
       return res
         .status(403)
@@ -101,24 +129,7 @@ router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 📌 Get detailed product info (publicly accessible)
-router.get("/:id", async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id).populate(
-      "createdBy",
-      "name"
-    );
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.json(product);
-  } catch (err) {
-    console.error("Error fetching product details:", err);
-    res.status(500).json({ message: "Failed to fetch product details" });
-  }
-});
-
-// 📌 Update a product (only the creator can update)
+// 📌 Update a product
 router.put("/:id", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -126,7 +137,6 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // ✅ 管理者 or 作成者 のみ許可
     const isAdmin = req.user.role === "admin";
     const isCreator = product.createdBy.toString() === req.user._id.toString();
     if (!isAdmin && !isCreator) {
@@ -134,7 +144,6 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
         .status(403)
         .json({ message: "You do not have permission to edit this product" });
     }
-    // Update product fields
     const { name, category, description, imageUrl, price } = req.body;
     product.name = name;
     product.category = category;
@@ -150,7 +159,7 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 📌 Update product stock (only available to admins or the creator)
+// 📌 Update product stock
 router.patch("/:id/stock", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -158,7 +167,6 @@ router.patch("/:id/stock", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Check if the user is either an admin or the product creator
     const isAdmin = req.user.role === "admin";
     const isCreator = product.createdBy?.toString() === req.user._id.toString();
     if (!isAdmin && !isCreator) {
@@ -196,7 +204,6 @@ router.post("/:id/reviews", verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: "商品が見つかりません。" });
     }
 
-    // ユーザーが既にレビューしているか確認
     const alreadyReviewed = product.reviews?.find(
       (r) => r.user.toString() === req.user._id.toString()
     );
@@ -212,7 +219,6 @@ router.post("/:id/reviews", verifyFirebaseToken, async (req, res) => {
       user: req.user._id,
     };
 
-    // 配列がなければ初期化
     if (!product.reviews) product.reviews = [];
 
     product.reviews.push(newReview);
@@ -238,8 +244,8 @@ router.get("/:id/hasPurchased", verifyFirebaseToken, async (req, res) => {
 
     const orders = await Order.find({
       userUid: userId,
-      status: { $ne: "キャンセル" }, // キャンセル以外
-      "items.productId": productId, // 注文内に対象商品あり
+      status: { $ne: "キャンセル" },
+      "items.productId": productId,
     });
 
     const hasPurchased = orders.length > 0;

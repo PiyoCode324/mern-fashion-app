@@ -1,4 +1,4 @@
-// utils/sendEmail.js
+// backend/utils/sendEmail.js
 
 // Utility function for sending emails using the Resend email service.
 
