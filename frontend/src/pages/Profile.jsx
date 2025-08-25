@@ -29,9 +29,13 @@ const Profile = () => {
       if (!token) return;
       try {
         setLoadingProducts(true);
-        const res = await axios.get("/api/products/mine", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/products/mine`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
         console.log("APIレスポンス", res.data);
         setMyProducts(res.data);
         setProductError(null);
