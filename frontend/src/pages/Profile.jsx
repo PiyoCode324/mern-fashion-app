@@ -32,6 +32,7 @@ const Profile = () => {
         const res = await axios.get("/api/products/mine", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("APIレスポンス", res.data);
         setMyProducts(res.data);
         setProductError(null);
       } catch (err) {
