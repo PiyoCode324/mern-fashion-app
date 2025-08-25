@@ -33,9 +33,9 @@ router.post("/create-checkout-session", async (req, res) => {
         quantity: item.quantity, // Quantity of the product
       })),
       // URL to redirect to after successful payment
-      success_url: "http://localhost:5173/complete",
+      success_url: `${process.env.FRONTEND_URL}/complete`,
       // URL to redirect to if the customer cancels the payment
-      cancel_url: "http://localhost:5173/cart",
+      cancel_url: `${process.env.FRONTEND_URL}/cart`,
     });
 
     // Respond with the session ID (used to redirect to the Stripe Checkout page)
@@ -43,7 +43,7 @@ router.post("/create-checkout-session", async (req, res) => {
   } catch (error) {
     console.error("❌ Stripe Checkout Session Error:", error);
     // Return a 500 error with a user-friendly message
-    res.status(500).json({ error: "Failed to create payment session" });
+    res.status(500).json({ error: error.message, raw: error });
   }
 });
 

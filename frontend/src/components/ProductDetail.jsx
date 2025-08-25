@@ -6,6 +6,7 @@ import { useFavorite } from "../contexts/FavoriteContext";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import Spinner from "./common/Spinner";
+import { showSuccess } from "../utils/showToast";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -84,6 +85,11 @@ export default function ProductDetail() {
     product.createdBy &&
     (product.createdBy._id === currentUser._id || isAdmin);
 
+  const handleAddToCart = () => {
+    addToCart(product);
+    showSuccess("🛒 カートに追加しました！");
+  };
+
   return (
     <div className="p-6 max-w-3xl mx-auto dark:bg-gray-900">
       <Link
@@ -134,7 +140,7 @@ export default function ProductDetail() {
 
         <div className="mb-4">
           <button
-            onClick={() => addToCart(product)}
+            onClick={handleAddToCart}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded py-2 px-4 transition"
           >
             🛒 カートに追加

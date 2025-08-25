@@ -68,6 +68,11 @@ app.use("/api/sales", salesRoutes); // ✅ 追加：売上集計ルートを登�
 
 // ✅ Start the Express server on the specified port (default: 5000)
 const PORT = process.env.PORT || 5000;
+
+// ✅ 環境変数の確認ログをここに追加
+console.log("🔑 STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY);
+console.log("🔑 MONGO_URI exists:", !!process.env.MONGO_URI);
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
