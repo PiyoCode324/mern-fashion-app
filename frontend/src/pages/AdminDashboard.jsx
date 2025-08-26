@@ -45,10 +45,10 @@ const AdminDashboard = () => {
             axios.get(`${import.meta.env.VITE_API_URL}/products/admin`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
-            axios.get("/api/orders", {
+            axios.get(`${import.meta.env.VITE_API_URL}/orders`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
-            axios.get("/api/users", {
+            axios.get(`${import.meta.env.VITE_API_URL}/users`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
           ]);
