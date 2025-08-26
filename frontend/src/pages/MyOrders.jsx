@@ -1,5 +1,5 @@
 // src/pages/MyOrders.jsx
-// src/pages/MyOrders.jsx
+
 import React, { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { Link } from "react-router-dom";
@@ -28,11 +28,14 @@ const MyOrders = () => {
       const idToken = await user.getIdToken();
 
       try {
-        const res = await fetch("/api/orders/my-orders", {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/orders/my-orders`,
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          }
+        );
         const data = await res.json();
         setOrders(data);
 
@@ -74,7 +77,7 @@ const MyOrders = () => {
 
     try {
       await axios.post(
-        `/api/products/${productId}/reviews`,
+        `${import.meta.env.VITE_API_URL}/products/${productId}/reviews`,
         {
           rating: form.rating,
           comment: form.comment,

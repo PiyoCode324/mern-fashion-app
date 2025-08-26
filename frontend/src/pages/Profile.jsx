@@ -99,7 +99,7 @@ const Profile = () => {
     try {
       setUpdatingId(productId);
       await axios.patch(
-        `/api/products/${productId}/stock`,
+        `${import.meta.env.VITE_API_URL}/products/${productId}/stock`,
         { countInStock: newStock },
         { headers: { Authorization: `Bearer ${token}` } }
       );
