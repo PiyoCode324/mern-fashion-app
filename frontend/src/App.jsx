@@ -64,6 +64,8 @@ function App() {
     userName, // Display name (e.g., Firebase displayName)
   } = useAuth();
 
+  console.log("useAuth userName:", userName, "authLoading:", authLoading);
+
   // 🔁 Flag to prevent duplicate registration (for StrictMode)
   const isRegistering = useRef(false);
 
