@@ -106,7 +106,7 @@ const Cart = () => {
               to="/confirm"
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 inline-block text-center"
             >
-              購入手続きへ進む（仮）
+              購入手続きへ進む
             </Link>
           </div>
         </>
