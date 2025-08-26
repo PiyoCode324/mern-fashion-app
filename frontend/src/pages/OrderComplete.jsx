@@ -30,20 +30,23 @@ const OrderComplete = () => {
       try {
         const idToken = await firebaseUser.getIdToken(); // 🔐 Retrieve Firebase ID token
 
-        const response = await fetch("/api/orders/save-order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            items: cartItems.map((item) => ({
-              productId: item._id,
-              quantity: item.quantity,
-            })),
-            totalAmount: totalPrice,
-          }),
-        });
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/orders/save-order`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+              items: cartItems.map((item) => ({
+                productId: item._id,
+                quantity: item.quantity,
+              })),
+              totalAmount: totalPrice,
+            }),
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
