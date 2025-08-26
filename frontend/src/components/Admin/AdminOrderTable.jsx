@@ -7,7 +7,7 @@ const AdminOrderTable = ({ orders, token, setOrders }) => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await axios.patch(
-        `/api/orders/${orderId}/status`,
+        `${import.meta.env.VITE_API_URL}/orders/${orderId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

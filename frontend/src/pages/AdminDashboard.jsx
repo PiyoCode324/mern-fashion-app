@@ -42,7 +42,7 @@ const AdminDashboard = () => {
         try {
           setLoading(true);
           const [productsRes, ordersRes, usersRes] = await Promise.all([
-            axios.get("/api/products/admin", {
+            axios.get(`${import.meta.env.VITE_API_URL}/products/admin`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
             axios.get("/api/orders", {
@@ -70,7 +70,7 @@ const AdminDashboard = () => {
   const onRoleChange = async (userId, newRole) => {
     try {
       await axios.patch(
-        `/api/users/${userId}/role`,
+        `${import.meta.env.VITE_API_URL}/users/${userId}/role`,
         { role: newRole },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
     }
     try {
       await axios.patch(
-        `/api/products/${productId}/stock`,
+        `${import.meta.env.VITE_API_URL}/products/${productId}/stock`,
         { countInStock: Number(newCount) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -142,7 +142,7 @@ const AdminDashboard = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await axios.patch(
-        `/api/orders/${orderId}/status`,
+        `${import.meta.env.VITE_API_URL}/orders/${orderId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
 
     try {
       const idToken = token || (user && (await user.getIdToken()));
-      await axios.delete(`/api/users/${userId}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));

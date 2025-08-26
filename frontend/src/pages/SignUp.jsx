@@ -57,7 +57,7 @@ const SignUp = () => {
       const token = await user.getIdToken();
 
       await axios.post(
-        "/api/users",
+        `${import.meta.env.VITE_API_URL}/users`,
         {
           uid: user.uid,
           name: user.displayName || "No name",

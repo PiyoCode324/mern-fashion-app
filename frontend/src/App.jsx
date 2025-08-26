@@ -92,7 +92,7 @@ function App() {
           const token = await getFreshToken(); // Get Firebase token
 
           await axios.post(
-            "/api/users", // 🔗 API endpoint for MongoDB
+            `${import.meta.env.VITE_API_URL}/users`, // 🔗 API endpoint for MongoDB
             {
               uid: firebaseUser.uid,
               name:
