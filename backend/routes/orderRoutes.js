@@ -1,8 +1,8 @@
 // routes/orderRoutes.js
 
 const express = require("express");
-const verifyFirebaseOnly = require("../middleware/verifyFirebaseOnly"); // Middleware for verifying Firebase Auth token
-const adminCheck = require("../middleware/adminCheck"); // Middleware for checking admin privileges
+const verifyFirebaseOnly = require("../middleware/verifyFirebaseOnly");
+const adminCheck = require("../middleware/adminCheck");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
@@ -14,11 +14,11 @@ console.log("✅ orderRoutes.js loaded and router initialized.");
 
 // 🔽 Route for saving an order and updating inventory
 router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
-  console.log("🚀 POST /api/orders/save-order endpoint hit.");
+  console.log("--- 🏁 注文保存リクエスト受信 ---");
   console.log("📦 Order request body:", req.body);
   console.log("👤 UID:", req.user.uid);
 
-  const { items } = req.body; // Array of ordered items
+  const { items } = req.body;
 
   try {
     const processedItems = [];
@@ -29,35 +29,29 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
       const product = await Product.findById(item.productId);
 
       if (!product) {
-        // Return 404 if the product does not exist
         return res.status(404).json({
           message: `Product not found: ${item.productId}`,
         });
       }
 
       if (product.countInStock < item.quantity) {
-        // Return error if stock is insufficient
         return res.status(400).json({
           message: `Insufficient stock for "${product.name}". Only ${product.countInStock} left.`,
         });
       }
 
-      // Reduce stock
       product.countInStock -= item.quantity;
       await product.save();
 
-      // Build order item object (including current price)
       processedItems.push({
         productId: item.productId,
         quantity: item.quantity,
         price: product.price,
       });
 
-      // Add to total price
       calculatedTotalPrice += product.price * item.quantity;
     }
 
-    // Find the user in MongoDB by Firebase UID
     const userInDb = await User.findOne({ uid: req.user.uid });
     if (!userInDb) {
       return res
@@ -65,15 +59,31 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
         .json({ message: "User not found for placing the order." });
     }
 
-    // Create and save the new order
     const newOrder = new Order({
       userUid: userInDb._id,
       items: processedItems,
       totalPrice: calculatedTotalPrice,
     });
 
-    await newOrder.save();
-    console.log("🎉 Order successfully saved to MongoDB.");
+    console.log("--- 💾 データベース保存直前 ---");
+    console.log("保存する注文データ:", newOrder);
+
+    // **Nested try...catch for specific database errors**
+    try {
+      await newOrder.save();
+      console.log(
+        "🎉 Order successfully saved to MongoDB. Order ID:",
+        newOrder._id
+      );
+    } catch (dbSaveErr) {
+      console.error("--- 🚨 データベース保存エラー ---");
+      console.error("詳細:", dbSaveErr);
+      // Return a 500 status code with a specific error message
+      return res.status(500).json({
+        error: "Failed to save order to database.",
+        details: dbSaveErr.message,
+      });
+    }
 
     // Attempt to send a confirmation email (non-blocking)
     try {
@@ -101,7 +111,10 @@ router.post("/save-order", verifyFirebaseOnly, async (req, res) => {
 
     res.status(200).json({ message: "Order saved successfully" });
   } catch (err) {
+    console.error("--- 🚨 全体的な注文保存エラー ---");
     console.error("🔥🔥🔥 Order Save Error:", err);
+    console.error("エラー名:", err.name);
+    console.error("エラーメッセージ:", err.message);
     res.status(500).json({ error: "Failed to save order" });
   }
 });
@@ -112,16 +125,18 @@ router.get("/my-orders", verifyFirebaseOnly, async (req, res) => {
   console.log("👤 UID for fetching orders:", req.user.uid);
 
   try {
-    // Find the user by Firebase UID
     const userInDb = await User.findOne({ uid: req.user.uid });
     if (!userInDb) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Fetch the user's orders and populate product info
-    const orders = await Order.find({ userUid: userInDb._id }).populate(
-      "items.productId"
-    );
+    const orders = await Order.find({ userUid: userInDb._id })
+      .populate({
+        path: "items.productId",
+        // Ensure to select the necessary fields for the frontend
+        select: "name imageUrl reviews",
+      })
+      .sort({ createdAt: -1 });
 
     console.log(`✅ Retrieved ${orders.length} orders.`);
     res.status(200).json(orders);
@@ -133,35 +148,33 @@ router.get("/my-orders", verifyFirebaseOnly, async (req, res) => {
 
 // 🔽 Route for admin to get all orders (admin access only)
 router.get("/", verifyFirebaseOnly, adminCheck, async (req, res) => {
+  console.log("➡️ GET /api/orders (admin) endpoint hit.");
   try {
     const { status, userName, sort } = req.query;
 
     const query = {};
 
-    // ステータスフィルタ
     if (status) {
       query.status = status;
     }
 
-    // ユーザー名フィルタ
     if (userName) {
       const matchedUsers = await User.find({
         name: { $regex: new RegExp(userName, "i") },
       }).select("_id");
 
       const userIds = matchedUsers.map((u) => u._id);
-
       query.userUid = userIds.length > 0 ? { $in: userIds } : { $in: [] };
     }
 
-    // 並び順の指定（デフォルトは desc）
     const sortOrder = sort === "asc" ? 1 : -1;
 
     const orders = await Order.find(query)
       .populate({ path: "userUid", select: "name" })
       .populate({ path: "items.productId", select: "name imageUrl" })
-      .sort({ createdAt: sortOrder }); // ← 並び替え適用！
+      .sort({ createdAt: sortOrder });
 
+    console.log(`✅ Admin retrieved ${orders.length} orders.`);
     res.json(orders);
   } catch (err) {
     console.error("❌ Error fetching filtered orders:", err);

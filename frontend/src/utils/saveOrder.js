@@ -33,7 +33,9 @@ export const saveOrder = async (items, totalAmount) => {
   // ❌ Handle errors if the response fails
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error || "注文保存に失敗しました");
+    throw new Error(
+      errorData.details || errorData.error || "注文保存に失敗しました"
+    );
   }
 
   // ✅ Return response data if saving is successful
