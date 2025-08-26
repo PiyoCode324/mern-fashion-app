@@ -19,9 +19,12 @@ const CategorySalesChart = ({ token }) => {
   useEffect(() => {
     const fetchCategorySales = async () => {
       try {
-        const res = await axios.get("/api/sales/category-sales", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/sales/category-sales`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setCategorySales(res.data);
       } catch (err) {
         console.error("カテゴリー別売上取得エラー:", err);

@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   // Loading state for authentication and user info
   const [loading, setLoading] = useState(true);
-  // Indicates whether the Firebase 
+  // Indicates whether the Firebase
   //  is new (not yet registered in MongoDB)
   const [isNewFirebaseUser, setIsNewFirebaseUser] = useState(false);
 
@@ -48,11 +48,14 @@ export const AuthProvider = ({ children }) => {
           setToken(token);
 
           // Fetch user data from MongoDB API using the token
-          const res = await axios.get("/api/users/me", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          const res = await axios.get(
+            `${import.meta.env.VITE_API_URL}/users/me`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
           setUser(res.data);
           setUserName(res.data.name || "ゲスト");

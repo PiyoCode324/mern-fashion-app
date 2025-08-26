@@ -18,9 +18,12 @@ const TopProductsChart = ({ token }) => {
   useEffect(() => {
     const fetchTopProducts = async () => {
       try {
-        const res = await axios.get("/api/sales/top-products", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/sales/top-products`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setTopProducts(res.data);
       } catch (err) {
         console.error("人気商品取得エラー:", err);

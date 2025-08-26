@@ -162,7 +162,7 @@ const AdminDashboard = () => {
 
   const handleFilterApply = async () => {
     try {
-      const res = await axios.get("/api/orders", {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/orders`, {
         headers: { Authorization: `Bearer ${token}` },
         params: filters,
       });

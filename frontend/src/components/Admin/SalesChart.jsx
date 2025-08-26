@@ -18,9 +18,12 @@ const SalesChart = ({ token }) => {
   useEffect(() => {
     const fetchMonthlySales = async () => {
       try {
-        const res = await axios.get("/api/sales/monthly", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/sales/monthly`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         // データ整形
         const processedData = res.data.map((item) => ({
           month: `${item._id.year}-${String(item._id.month).padStart(2, "0")}`,
