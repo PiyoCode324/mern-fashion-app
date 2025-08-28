@@ -292,9 +292,26 @@ const AdminDashboard = () => {
         onDelete={handleDelete}
       />
 
-      <SalesChart token={token} />
-      <TopProductsChart token={token} />
-      <CategorySalesChart token={token} />
+      {/* SalesChart */}
+      <section className="mb-10 overflow-x-auto">
+        <div className="min-w-[350px]">
+          <SalesChart token={token} />
+        </div>
+      </section>
+
+      {/* TopProductsChart */}
+      <section className="mb-10 overflow-x-auto">
+        <div className="min-w-[350px]">
+          <TopProductsChart token={token} />
+        </div>
+      </section>
+
+      {/* CategorySalesChart */}
+      <section className="mb-10 overflow-x-auto">
+        <div className="min-w-[350px]">
+          <CategorySalesChart token={token} />
+        </div>
+      </section>
     </div>
   );
 };

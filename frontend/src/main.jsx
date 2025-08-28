@@ -1,4 +1,4 @@
-// main.jsx
+// src/main.jsx
 // React's StrictMode (helps detect potential problems during development)
 import { StrictMode } from "react";
 
