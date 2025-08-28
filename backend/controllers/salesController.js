@@ -2,6 +2,7 @@
 
 const Order = require("../models/Order");
 
+// 🔽 人気商品ランキング
 const getTopSellingProducts = async (req, res) => {
   try {
     const topProducts = await Order.aggregate([
@@ -78,7 +79,30 @@ const getCategorySales = async (req, res) => {
   }
 };
 
+// 🔽 月別売上集計
+const getMonthlySales = async (req, res) => {
+  try {
+    const result = await Order.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          totalSales: { $sum: "$totalPrice" },
+        },
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+    ]);
+    res.json(result);
+  } catch (err) {
+    console.error("月別売上取得エラー:", err);
+    res.status(500).json({ message: "月別売上の取得に失敗しました" });
+  }
+};
+
 module.exports = {
   getTopSellingProducts,
-  getCategorySales, // ← これを追加
+  getCategorySales,
+  getMonthlySales, // ← 追加
 };

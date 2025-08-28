@@ -51,9 +51,8 @@ const CategorySalesChart = ({ token }) => {
             cx="50%"
             cy="50%"
             outerRadius={100}
-            label={({ name, percent }) =>
-              `${name} (${(percent * 100).toFixed(0)}%)`
-            }
+            labelLine={false}
+            label={({ percent }) => `${(percent * 100).toFixed(0)}%`} // 円内にカテゴリ名+割合+金額
           >
             {categorySales.map((entry, index) => (
               <Cell
@@ -62,7 +61,7 @@ const CategorySalesChart = ({ token }) => {
               />
             ))}
           </Pie>
-          <Tooltip />
+          <Tooltip formatter={(value) => `¥${value.toLocaleString()}`} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

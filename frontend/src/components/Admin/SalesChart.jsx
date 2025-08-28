@@ -24,6 +24,7 @@ const SalesChart = ({ token }) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
+        console.log("月別売上データ:", res.data); // ← ここで確認
         // データ整形
         const processedData = res.data.map((item) => ({
           month: `${item._id.year}-${String(item._id.month).padStart(2, "0")}`,
@@ -53,9 +54,10 @@ const SalesChart = ({ token }) => {
           barCategoryGap="30%"
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
+          <XAxis dataKey="month" /> {/* ← これが月ラベル */}
+          <YAxis tickFormatter={(value) => `¥${value.toLocaleString()}`} />{" "}
+          {/* ← 金額表示 */}
+          <Tooltip formatter={(value) => `¥${value.toLocaleString()}`} />
           <Bar dataKey="totalSales" fill="#8884d8" barSize={15} />
         </BarChart>
       </ResponsiveContainer>

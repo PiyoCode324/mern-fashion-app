@@ -44,14 +44,17 @@ const TopProductsChart = ({ token }) => {
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={topProducts} layout="vertical" margin={{ left: 60 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" />
+          <XAxis
+            type="number"
+            tickFormatter={(value) => value.toLocaleString()}
+          />
           <YAxis
             type="category"
             dataKey="name"
             width={150}
             tick={{ fontSize: 12 }}
           />
-          <Tooltip />
+          <Tooltip formatter={(value) => value.toLocaleString()} />
           <Bar dataKey="totalSold" fill="#82ca9d" barSize={24} />
         </BarChart>
       </ResponsiveContainer>
