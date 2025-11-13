@@ -3,83 +3,83 @@ import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ProductCard from "./ProductCard";
-import { useAuth } from "../contexts/AuthContext"; // AuthContextをインポート
-import Spinner from "./common/Spinner"; // スピナーをインポート
+import { useAuth } from "../contexts/AuthContext"; // 認証情報を管理するコンテキスト
+import Spinner from "./common/Spinner"; // ローディング中に表示するスピナー
 
 const ProductList = () => {
-  // State for storing product list
+  // 商品一覧データを保持するステート
   const [products, setProducts] = useState([]);
-  // Category filter state (default is "all")
+  // カテゴリーフィルター（デフォルトは "all"）
   const [category, setCategory] = useState("all");
-  // Price range narrowing state
+  // 価格帯フィルター（デフォルトは "all"）
   const [priceRange, setPriceRange] = useState("all");
-  // Keyword search state
+  // キーワード検索用のステート
   const [keyword, setKeyword] = useState("");
-  // ローディング状態（商品取得時）
+  // 商品取得中のローディング状態
   const [loadingProducts, setLoadingProducts] = useState(true);
 
-  // Get Firebase authentication user information and authentication loading status
+  // Firebase 認証ユーザー情報とそのロード状態を取得
   const { firebaseUser, loadingAuth } = useAuth();
 
-  // Product retrieval process (executed according to changes in firebaseUser and authentication loading status)
+  // 商品一覧を API から取得する処理（ユーザーの認証状態に依存）
   useEffect(() => {
     const fetchProducts = async () => {
-      // If the authentication information has not been loaded, wait for the process to finish.
+      // 認証情報のロード中であれば処理を待機
       if (loadingAuth) {
         return;
       }
 
       try {
-        setLoadingProducts(true); // ローディング開始
+        setLoadingProducts(true); // 取得開始 → スピナー表示
 
         let headers = {};
         if (firebaseUser) {
-          // If the user is logged in, get the latest ID token and set it in the authorization header.
+          // ログインしている場合、ID トークンを取得しリクエストヘッダーに付与
           const token = await firebaseUser.getIdToken();
           headers = {
             Authorization: `Bearer ${token}`,
           };
         } else {
-          // Behavior when not logged in (e.g. displaying only products that do not require authentication)
+          // 非ログイン時の挙動（例: 公開商品だけ取得）
           console.log(
             "ユーザーがログインしていません。認証なしで商品を取得します。"
           );
         }
 
-        // Get product list from API (with authentication header)
+        // 商品一覧をバックエンド API から取得
         const res = await axios.get(
           `${import.meta.env.VITE_API_URL}/products`,
           {
             headers: headers,
           }
         );
-        setProducts(res.data);
+        setProducts(res.data); // 取得した商品をステートに保存
       } catch (err) {
         console.error("商品の取得に失敗しました:", err);
       } finally {
-        setLoadingProducts(false); // ローディング完了
+        setLoadingProducts(false); // 完了後スピナーを非表示
       }
     };
 
     fetchProducts();
   }, [firebaseUser, loadingAuth]);
 
-  // Product Category List
+  // カテゴリ一覧（ボタンで切り替え）
   const categories = ["all", "tops", "bottoms", "accessory", "hat", "bag"];
 
-  // Apply multiple filters to the retrieved product list
+  // 商品一覧に複数のフィルターを適用
   const filteredProducts = products
-    // Filter by category (all shows all)
+    // カテゴリーフィルター
     .filter((product) =>
       category === "all" ? true : product.category === category
     )
-    // Filter by price range (all includes all prices)
+    // 価格帯フィルター
     .filter((product) => {
       if (priceRange === "all") return true;
       const [min, max] = priceRange.split("-").map(Number);
       return product.price >= min && product.price <= max;
     })
-    // Keyword search (partial match on product name or description)
+    // キーワード検索（商品名または説明に部分一致）
     .filter((product) => {
       if (keyword.trim() === "") return true;
       const lowerKeyword = keyword.toLowerCase();
@@ -89,7 +89,7 @@ const ProductList = () => {
       );
     });
 
-  // Price range options list
+  // 価格帯選択肢リスト
   const priceRanges = [
     { label: "すべての価格", value: "all" },
     { label: "〜¥5,000", value: "0-5000" },
@@ -99,15 +99,15 @@ const ProductList = () => {
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
-      {/* Category Filter */}
+      {/* 🔹 カテゴリーフィルター */}
       <div className="flex flex-wrap gap-2 mb-4">
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => setCategory(cat)}
+            onClick={() => setCategory(cat)} // 選択カテゴリを更新
             className={`px-3 py-1 rounded border transition ${
               category === cat
-                ? "bg-indigo-500 text-white"
+                ? "bg-indigo-500 text-white" // 選択中のボタンはハイライト
                 : "bg-white text-gray-800 dark:bg-gray-700 dark:text-white"
             }`}
           >
@@ -116,11 +116,11 @@ const ProductList = () => {
         ))}
       </div>
 
-      {/* Price range filter */}
+      {/* 🔹 価格帯フィルター */}
       <div className="mb-4">
         <select
           value={priceRange}
-          onChange={(e) => setPriceRange(e.target.value)}
+          onChange={(e) => setPriceRange(e.target.value)} // 価格範囲を更新
           className="border p-2 rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-white dark:border-gray-600"
         >
           {priceRanges.map((range) => (
@@ -135,18 +135,18 @@ const ProductList = () => {
         </select>
       </div>
 
-      {/* Keyword search form */}
+      {/* 🔹 キーワード検索 */}
       <div className="mb-4">
         <input
           type="text"
           value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          onChange={(e) => setKeyword(e.target.value)} // 入力値を更新
           placeholder="商品名や説明で検索"
           className="border p-2 rounded w-full bg-white text-gray-800 dark:bg-gray-700 dark:text-white dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-300"
         />
       </div>
 
-      {/* スピナー表示 or 商品リスト表示 */}
+      {/* 🔹 ローディング中はスピナー表示、それ以外は商品カードを表示 */}
       {loadingProducts ? (
         <Spinner />
       ) : (

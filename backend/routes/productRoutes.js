@@ -7,17 +7,18 @@ const { verifyFirebaseToken } = require("../middleware/authMiddleware");
 const adminCheck = require("../middleware/adminCheck");
 const Order = require("../models/Order");
 
-// --- 変更点ここから ---
+// ===============================
+// 商品関連ルート定義
+// ===============================
 
-// ✅ Admin only: Get all products (for admin panel) - 固定パスは先に
+// ✅ 管理者のみ：全商品の取得（管理者用ダッシュボード）
 router.get("/admin", verifyFirebaseToken, adminCheck, async (req, res) => {
   try {
-    console.log(
-      "DEBUG: GET /api/products/admin (管理者用商品一覧) ルートに到達しました。"
-    );
+    console.log("DEBUG: GET /api/products/admin (管理者用商品一覧)");
+    // 作成者のユーザー名も取得
     const products = await Product.find().populate({
       path: "createdBy",
-      select: "name", // Show creator name
+      select: "name",
     });
     res.json(products);
   } catch (err) {
@@ -26,13 +27,10 @@ router.get("/admin", verifyFirebaseToken, adminCheck, async (req, res) => {
   }
 });
 
-// 📌 Get all products created by the logged-in user - 固定パスは先に
+// ✅ ログインユーザー自身が作成した商品を取得
 router.get("/mine", verifyFirebaseToken, async (req, res) => {
   try {
-    console.log(
-      "DEBUG: GET /api/products/mine (ユーザー作成商品) ルートに到達しました。"
-    );
-    // Filter products by creator ID (current user)
+    console.log("DEBUG: GET /api/products/mine (ユーザー作成商品)");
     const products = await Product.find({ createdBy: req.user._id });
     res.json(products);
   } catch (err) {
@@ -41,13 +39,11 @@ router.get("/mine", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// ✅ Public: Get ALL products (accessible to anyone)
+// ✅ 公開：すべての商品を取得（ログイン不要）
 router.get("/", async (req, res) => {
   try {
-    console.log(
-      "DEBUG: GET /api/products (すべての商品) ルートに到達しました。"
-    );
-    const products = await Product.find({}); // すべての商品を取得
+    console.log("DEBUG: GET /api/products (すべての商品)");
+    const products = await Product.find({});
     res.json(products);
   } catch (err) {
     console.error("Error fetching all products:", err);
@@ -55,12 +51,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ Public: Get product by ID (accessible to anyone) - パスパラメータを持つルートは後に
+// ✅ 公開：ID で商品を取得（詳細ページ表示など）
 router.get("/:id", async (req, res) => {
   try {
-    console.log(
-      `DEBUG: GET /api/products/${req.params.id} (個別商品) ルートに到達しました。`
-    );
+    console.log(`DEBUG: GET /api/products/${req.params.id} (個別商品詳細)`);
     const product = await Product.findById(req.params.id)
       .populate("createdBy", "name")
       .populate("reviews.user", "name");
@@ -68,7 +62,6 @@ router.get("/:id", async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-
     res.json(product);
   } catch (err) {
     console.error("Error fetching product details:", err);
@@ -79,42 +72,42 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// --- 変更点ここまで ---
+// ===============================
+// CRUD 操作
+// ===============================
 
-// 📌 Create a new product (only available to logged-in users)
+// 📌 商品作成（ログイン必須）
 router.post("/", verifyFirebaseToken, async (req, res) => {
   try {
-    // Receive product data from frontend
     const { name, category, description, imageUrl, price, countInStock } =
       req.body;
 
-    // Create a new Product instance
     const product = new Product({
       name,
       category,
       description,
       imageUrl,
       price,
-      countInStock: countInStock ?? 0, // Defaults to 0 if not provided
-      createdBy: req.user._id, // Assign current user as the creator
+      countInStock: countInStock ?? 0, // 未指定なら 0
+      createdBy: req.user._id, // 作成者をログイン中ユーザーに紐付け
     });
 
-    await product.save(); // Save product to DB
-    res.status(201).json(product); // Return the newly created product
+    await product.save();
+    res.status(201).json(product);
   } catch (err) {
     console.error("Error creating product:", err);
     res.status(500).json({ message: "Failed to create product" });
   }
 });
 
-// 📌 Delete a product
+// 📌 商品削除（作成者本人のみ可能）
 router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-
+    // 作成者でない場合は削除不可
     if (product.createdBy.toString() !== req.user._id.toString()) {
       return res
         .status(403)
@@ -129,7 +122,7 @@ router.delete("/:id", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 📌 Update a product
+// 📌 商品更新（作成者または管理者のみ可能）
 router.put("/:id", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -139,11 +132,14 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
 
     const isAdmin = req.user.role === "admin";
     const isCreator = product.createdBy.toString() === req.user._id.toString();
+
     if (!isAdmin && !isCreator) {
       return res
         .status(403)
         .json({ message: "You do not have permission to edit this product" });
     }
+
+    // 更新対象フィールド
     const { name, category, description, imageUrl, price } = req.body;
     product.name = name;
     product.category = category;
@@ -159,7 +155,7 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 📌 Update product stock
+// 📌 在庫数更新（作成者または管理者のみ可能）
 router.patch("/:id/stock", verifyFirebaseToken, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -193,25 +189,29 @@ router.patch("/:id/stock", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 📌 レビュー追加エンドポイント
+// ===============================
+// レビュー関連
+// ===============================
+
+// 📌 商品にレビューを追加（ユーザー1人につき1回まで）
 router.post("/:id/reviews", verifyFirebaseToken, async (req, res) => {
   const { rating, comment } = req.body;
 
   try {
     const product = await Product.findById(req.params.id);
-
     if (!product) {
       return res.status(404).json({ message: "商品が見つかりません。" });
     }
 
+    // 同一ユーザーが既にレビューしているか確認
     const alreadyReviewed = product.reviews?.find(
       (r) => r.user.toString() === req.user._id.toString()
     );
-
     if (alreadyReviewed) {
       return res.status(400).json({ message: "既にレビュー済みです。" });
     }
 
+    // 新規レビュー作成
     const newReview = {
       name: req.user.name || "匿名",
       rating: Number(rating),
@@ -236,7 +236,11 @@ router.post("/:id/reviews", verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// 購入済み判定API
+// ===============================
+// 購入済み判定
+// ===============================
+
+// 📌 ユーザーが商品を購入したことがあるか確認
 router.get("/:id/hasPurchased", verifyFirebaseToken, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -244,7 +248,7 @@ router.get("/:id/hasPurchased", verifyFirebaseToken, async (req, res) => {
 
     const orders = await Order.find({
       userUid: userId,
-      status: { $ne: "キャンセル" },
+      status: { $ne: "キャンセル" }, // キャンセル済み注文は除外
       "items.productId": productId,
     });
 

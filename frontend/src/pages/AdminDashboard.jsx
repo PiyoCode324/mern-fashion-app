@@ -13,20 +13,29 @@ import TopProductsChart from "../components/Admin/TopProductsChart";
 import CategorySalesChart from "../components/Admin/CategorySalesChart";
 
 const AdminDashboard = () => {
+  // 認証情報をコンテキストから取得
   const { user, token, loadingAuth } = useAuth();
   const navigate = useNavigate();
 
+  // 管理対象のデータ（ユーザー・商品・注文）を保持するステート
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+
+  // ローディング状態・エラーメッセージ
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // 在庫編集用の一時保存ステート（商品IDごとに値を保持）
   const [stockEdits, setStockEdits] = useState({});
+
+  // 注文フィルター用のステート
   const [filters, setFilters] = useState({
-    status: "",
-    username: "",
+    status: "", // 注文ステータス（例: shipped, pendingなど）
+    username: "", // ユーザー名でフィルタ
   });
 
+  // 管理者以外がアクセスした場合はリダイレクト
   useEffect(() => {
     if (!loadingAuth) {
       if (!user || user.role !== "admin") {
@@ -36,11 +45,13 @@ const AdminDashboard = () => {
     }
   }, [user, loadingAuth, navigate]);
 
+  // 初期データ取得（商品・注文・ユーザー）
   useEffect(() => {
     if (token && user?.role === "admin") {
       const fetchData = async () => {
         try {
           setLoading(true);
+          // 商品・注文・ユーザーを並列で取得
           const [productsRes, ordersRes, usersRes] = await Promise.all([
             axios.get(`${import.meta.env.VITE_API_URL}/products/admin`, {
               headers: { Authorization: `Bearer ${token}` },
@@ -52,6 +63,7 @@ const AdminDashboard = () => {
               headers: { Authorization: `Bearer ${token}` },
             }),
           ]);
+          // 取得データを反映
           setProducts(productsRes.data);
           setOrders(ordersRes.data);
           setUsers(usersRes.data);
@@ -67,6 +79,7 @@ const AdminDashboard = () => {
     }
   }, [token, user]);
 
+  // ユーザー権限の変更
   const onRoleChange = async (userId, newRole) => {
     try {
       await axios.patch(
@@ -74,6 +87,7 @@ const AdminDashboard = () => {
         { role: newRole },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // 更新後、ローカルのユーザー一覧も変更
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, role: newRole } : u))
       );
@@ -84,18 +98,22 @@ const AdminDashboard = () => {
     }
   };
 
+  // 認証確認やデータ読み込み中はスピナーを表示
   if (loadingAuth || loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner />
-        {/* またはテキストだけでもOK */}
+        {/* もしくはテキストだけでも可 */}
         {/* <div className="text-gray-800 dark:text-white">読み込み中...</div> */}
       </div>
     );
   }
+
+  // エラーがある場合はエラーメッセージ表示
   if (error)
     return <div className="text-red-600 dark:text-red-400">{error}</div>;
 
+  // 在庫入力フォームの変更を管理
   const handleStockChange = (productId, value) => {
     setStockEdits((prev) => ({
       ...prev,
@@ -103,6 +121,7 @@ const AdminDashboard = () => {
     }));
   };
 
+  // 在庫更新を保存
   const handleSaveStock = async (productId) => {
     const newCount = stockEdits[productId];
     if (isNaN(newCount) || Number(newCount) < 0) {
@@ -115,11 +134,13 @@ const AdminDashboard = () => {
         { countInStock: Number(newCount) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // 更新後、ローカルのステートも反映
       setProducts((prev) =>
         prev.map((p) =>
           p._id === productId ? { ...p, countInStock: Number(newCount) } : p
         )
       );
+      // 編集済み入力をクリア
       setStockEdits((prev) => {
         const newState = { ...prev };
         delete newState[productId];
@@ -139,6 +160,7 @@ const AdminDashboard = () => {
     }
   };
 
+  // 注文ステータスの更新
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await axios.patch(
@@ -146,6 +168,7 @@ const AdminDashboard = () => {
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // ローカルデータも更新
       setOrders((prev) =>
         prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
       );
@@ -160,11 +183,12 @@ const AdminDashboard = () => {
     }
   };
 
+  // 注文フィルターの適用
   const handleFilterApply = async () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/orders`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: filters,
+        params: filters, // status, username をクエリに渡す
       });
       setOrders(res.data);
     } catch (err) {
@@ -173,6 +197,7 @@ const AdminDashboard = () => {
     }
   };
 
+  // ユーザー削除
   const handleDelete = async (userId) => {
     if (!window.confirm("本当にこのユーザーを削除しますか？")) return;
 
@@ -181,6 +206,7 @@ const AdminDashboard = () => {
       await axios.delete(`${import.meta.env.VITE_API_URL}/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      // ローカルのユーザー一覧から削除
       setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
     } catch (err) {
       console.error("削除エラー:", err);
@@ -190,6 +216,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="px-4 py-6 max-w-screen-lg mx-auto w-full text-gray-800 dark:text-white dark:bg-gray-900">
+      {/* ホームに戻るリンク */}
       <div className="mb-6">
         <Link
           to="/"
@@ -203,18 +230,18 @@ const AdminDashboard = () => {
         管理者ダッシュボード
       </h1>
 
+      {/* 商品リスト表示（カード形式など） */}
       <section className="mb-10">
         <AdminProductList products={products} />
       </section>
 
+      {/* 商品一覧（テーブル形式） */}
       <section className="mb-10">
         {products.length === 0 ? (
           <p>商品が登録されていません。</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 whitespace-nowrap">
-              {/* ★ここを修正します。`{" "}` を削除するか、タグを密着させます。 */}
-              {/* <table ...>{" "}<thead>...</table> の {" "} を削除 */}
               <thead>
                 <tr className="bg-gray-200 dark:bg-gray-700 text-sm text-gray-800 dark:text-white">
                   <th className="border p-2 w-36 dark:border-gray-600">ID</th>
@@ -277,36 +304,37 @@ const AdminDashboard = () => {
           </div>
         )}
       </section>
+
+      {/* 注文フィルターと注文一覧 */}
       <AdminFilters
         filters={filters}
         setFilters={setFilters}
         onFilterApply={handleFilterApply}
       />
-
-      {/* AdminOrderTableとAdminUserTableも同様に内部でテーブルをoverflow-x-autoで囲むことを検討してください。 */}
       <AdminOrderTable orders={orders} token={token} setOrders={setOrders} />
 
+      {/* ユーザー管理テーブル */}
       <AdminUserTable
         users={users}
         onRoleChange={onRoleChange}
         onDelete={handleDelete}
       />
 
-      {/* SalesChart */}
+      {/* 売上チャート */}
       <section className="mb-10 overflow-x-auto">
         <div className="min-w-[350px]">
           <SalesChart token={token} />
         </div>
       </section>
 
-      {/* TopProductsChart */}
+      {/* 人気商品チャート */}
       <section className="mb-10 overflow-x-auto">
         <div className="min-w-[350px]">
           <TopProductsChart token={token} />
         </div>
       </section>
 
-      {/* CategorySalesChart */}
+      {/* カテゴリー別売上チャート */}
       <section className="mb-10 overflow-x-auto">
         <div className="min-w-[350px]">
           <CategorySalesChart token={token} />

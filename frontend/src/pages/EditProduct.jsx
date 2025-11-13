@@ -1,16 +1,15 @@
 // src/pages/EditProduct.jsx
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import { useAuth } from "../contexts/AuthContext";
-import { toast } from "react-toastify";
-import Spinner from "../components/common/Spinner";
+import { useParams, useNavigate, Link } from "react-router-dom"; // URLパラメータ、ページ遷移、リンク
+import axios from "axios"; // API通信
+import { useAuth } from "../contexts/AuthContext"; // ユーザー認証情報
+import { toast } from "react-toastify"; // 通知表示
+import Spinner from "../components/common/Spinner"; // ローディング表示
 
 const EditProduct = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // URLから商品IDを取得
   const navigate = useNavigate();
-
-  const { token, user: currentUser } = useAuth();
+  const { token, user: currentUser } = useAuth(); // 認証情報
 
   const [form, setForm] = useState({
     name: "",
@@ -20,23 +19,25 @@ const EditProduct = () => {
     price: "",
   });
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true); // 商品情報取得中フラグ
+  const [error, setError] = useState(null); // エラーメッセージ
+  const [uploading, setUploading] = useState(false); // 画像アップロード中フラグ
 
+  // 商品情報取得
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/products/${id}`)
       .then((res) => {
         setForm(res.data);
 
+        // 編集権限チェック：作成者または管理者のみ
         if (
           res.data.createdBy._id !== currentUser._id &&
           currentUser.role !== "admin"
         ) {
           toast.dismiss();
           toast.error("この商品は編集できません");
-          navigate("/");
+          navigate("/"); // 権限なしならホームへ
         } else {
           setLoading(false);
         }
@@ -47,10 +48,12 @@ const EditProduct = () => {
       });
   }, [id, currentUser, navigate]);
 
+  // フォーム入力の変更ハンドラー
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // 画像アップロード処理
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -58,14 +61,14 @@ const EditProduct = () => {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "mern-fashion-app-unsigned");
+    formData.append("upload_preset", "mern-fashion-app-unsigned"); // Cloudinary設定
 
     try {
       const res = await axios.post(
         "https://api.cloudinary.com/v1_1/dagqtxj06/image/upload",
         formData
       );
-      setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url }));
+      setForm((prev) => ({ ...prev, imageUrl: res.data.secure_url })); // URL更新
     } catch (err) {
       console.error("Image upload error:", err);
       toast.error("画像のアップロードに失敗しました");
@@ -74,6 +77,7 @@ const EditProduct = () => {
     }
   };
 
+  // フォーム送信（商品更新）
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -82,6 +86,7 @@ const EditProduct = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+      // 更新後の遷移：管理者は管理ページ、それ以外はホーム
       if (currentUser.role === "admin") {
         navigate("/admin/products");
       } else {
@@ -98,7 +103,7 @@ const EditProduct = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 sm:p-8 bg-white dark:bg-gray-900 rounded shadow-md">
-      {/* Back to Home */}
+      {/* ホームに戻るリンク */}
       <div className="mb-6">
         <Link
           to="/"
@@ -108,13 +113,14 @@ const EditProduct = () => {
         </Link>
       </div>
 
-      {/* Page title */}
+      {/* ページタイトル */}
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center sm:text-left text-gray-900 dark:text-gray-100">
         商品を編集
       </h2>
 
-      {/* Edit product form */}
+      {/* 編集フォーム */}
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 商品名 */}
         <input
           type="text"
           name="name"
@@ -125,6 +131,7 @@ const EditProduct = () => {
           required
         />
 
+        {/* カテゴリ選択 */}
         <select
           name="category"
           value={form.category}
@@ -142,6 +149,7 @@ const EditProduct = () => {
           <option value="bag">バッグ</option>
         </select>
 
+        {/* 説明 */}
         <textarea
           name="description"
           placeholder="説明"
@@ -150,6 +158,7 @@ const EditProduct = () => {
           className="w-full p-3 sm:p-4 border border-gray-300 dark:border-gray-700 rounded text-base sm:text-lg min-h-[120px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
         />
 
+        {/* 画像アップロード */}
         <input
           type="file"
           accept="image/*"
@@ -162,6 +171,7 @@ const EditProduct = () => {
           </p>
         )}
 
+        {/* 画像プレビュー */}
         {form.imageUrl && (
           <img
             src={form.imageUrl}
@@ -170,6 +180,7 @@ const EditProduct = () => {
           />
         )}
 
+        {/* 価格 */}
         <input
           type="number"
           name="price"
@@ -181,10 +192,11 @@ const EditProduct = () => {
           min="0"
         />
 
+        {/* 送信ボタン */}
         <button
           type="submit"
           className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white py-3 rounded disabled:opacity-50 text-lg font-semibold transition-colors"
-          disabled={uploading}
+          disabled={uploading} // アップロード中は送信不可
         >
           更新する
         </button>

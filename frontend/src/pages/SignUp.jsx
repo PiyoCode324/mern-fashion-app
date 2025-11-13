@@ -1,61 +1,66 @@
 // src/pages/SignUp.jsx
 import React, { useState } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../firebase";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { toast } from "react-toastify";
+import { auth } from "../firebase"; // Firebase初期化
+import { useNavigate } from "react-router-dom"; // ページ遷移
+import axios from "axios"; // API通信
+import { toast } from "react-toastify"; // トースト通知
 
 const SignUp = () => {
-  // Input Field State
+  // 🔹 入力フォーム用ステート
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState({});
-  const navigate = useNavigate();
+  const [errors, setErrors] = useState({}); // バリデーションエラー
 
-  // メール形式チェック用の簡易正規表現
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const navigate = useNavigate(); // 登録後に遷移用
 
-  // バリデーション関数
+  // 🔹 メール形式チェック用簡易正規表現
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  // 🔹 バリデーション関数
   const validate = () => {
     const newErrors = {};
-    if (!name.trim()) {
-      newErrors.name = "名前は必須です。";
-    }
+
+    if (!name.trim()) newErrors.name = "名前は必須です。";
+
     if (!email) {
       newErrors.email = "メールアドレスは必須です。";
     } else if (!validateEmail(email)) {
       newErrors.email = "メールアドレスの形式が正しくありません。";
     }
+
     if (!password) {
       newErrors.password = "パスワードは必須です。";
     } else if (password.length < 6) {
       newErrors.password = "パスワードは6文字以上で入力してください。";
     }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    return Object.keys(newErrors).length === 0; // エラーがなければtrue
   };
 
+  // 🔹 登録処理
   const handleSignUp = async (e) => {
     e.preventDefault();
-
     if (!validate()) return;
 
     try {
+      // 1️⃣ Firebase Auth でアカウント作成
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
+      // 2️⃣ Firebaseユーザー名を更新
       await updateProfile(userCredential.user, { displayName: name });
 
       const user = userCredential.user;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(); // JWT取得
 
+      // 3️⃣ 自分のバックエンドにもユーザー情報を保存
       await axios.post(
         `${import.meta.env.VITE_API_URL}/users`,
         {
@@ -64,16 +69,16 @@ const SignUp = () => {
           email: user.email,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       toast.success("登録に成功しました！");
-      navigate("/");
+      navigate("/"); // ホームへ遷移
     } catch (err) {
       console.error("登録エラー:", err);
+
+      // 🔹 エラー処理
       if (err.response?.status === 409) {
         toast.error(err.response.data.message || "既に登録されています。");
       } else if (err.code === "auth/email-already-in-use") {
@@ -89,7 +94,7 @@ const SignUp = () => {
       <h2 className="text-2xl font-bold mb-4">新規登録</h2>
 
       <form onSubmit={handleSignUp} className="space-y-4" noValidate>
-        {/* Name input */}
+        {/* 🔹 名前入力 */}
         <div>
           <label className="block">名前</label>
           <input
@@ -105,7 +110,7 @@ const SignUp = () => {
           )}
         </div>
 
-        {/* Email input */}
+        {/* 🔹 メール入力 */}
         <div>
           <label className="block">メールアドレス</label>
           <input
@@ -121,7 +126,7 @@ const SignUp = () => {
           )}
         </div>
 
-        {/* Password input */}
+        {/* 🔹 パスワード入力 */}
         <div>
           <label className="block">パスワード</label>
           <input
@@ -137,6 +142,7 @@ const SignUp = () => {
           )}
         </div>
 
+        {/* 🔹 登録ボタン */}
         <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"

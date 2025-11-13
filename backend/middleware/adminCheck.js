@@ -1,24 +1,27 @@
 // middleware/adminCheck.js
 
-// 🔒 This middleware restricts access to administrator users only.
-// It should be used after authentication (i.e., when req.user contains the logged-in user's information).
+// 🔒 このミドルウェアは管理者ユーザーのみがアクセスできるよう制限をかける役割を持つ
+//     - 利用する際は必ず認証処理の後に使用すること
+//     - その理由は、req.user にログイン済みユーザーの情報が格納されている必要があるため
 
 const adminCheck = (req, res, next) => {
-  const user = req.user; // 🔍 Retrieve the user information stored after authentication
+  const user = req.user; // 🔍 認証処理後に格納されたユーザー情報を取得
 
-  // ✅ If the user is not logged in (no user info found), return 401 (Unauthorized)
+  // ✅ ユーザー情報が存在しない（未ログイン）の場合 → 401 Unauthorized を返す
   if (!user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  // ❌ If the user is not an administrator, return 403 (Forbidden)
+  // ❌ ユーザーが管理者でない場合 → 403 Forbidden を返す
   if (user.role !== "admin") {
-    return res.status(403).json({ message: "Forbidden: Admin access required" });
+    return res
+      .status(403)
+      .json({ message: "Forbidden: Admin access required" });
   }
 
-  // 👍 If the user is an administrator, proceed to the next middleware or route handler
+  // 👍 ユーザーが管理者の場合 → 次のミドルウェアまたはルート処理へ進む
   next();
 };
 
-// 📦 Export the middleware for use in other files
+// 📦 このミドルウェアを他のファイルから利用できるようエクスポート
 module.exports = adminCheck;

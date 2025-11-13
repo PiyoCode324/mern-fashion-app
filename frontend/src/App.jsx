@@ -1,5 +1,5 @@
 // src/App.jsx
-// Importing required libraries and components
+// 必要なライブラリとコンポーネントのインポート
 import React, { useEffect, useRef } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import ProductList from "./components/ProductList";
@@ -25,85 +25,59 @@ import axios from "axios";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import AdminProductList from "./components/Admin/AdminProductList"; // ←これ追加
-
-// 中略...
-
-<Routes>
-  <Route path="/" element={<ProductList />} />
-
-  <Route
-    path="/admin"
-    element={
-      <PrivateRoute>
-        <AdminDashboard />
-      </PrivateRoute>
-    }
-  />
-
-  <Route
-    path="/admin/products"
-    element={
-      <PrivateRoute>
-        <AdminProductList />
-      </PrivateRoute>
-    }
-  />
-
-  {/* 他のルート... */}
-</Routes>;
+import AdminProductList from "./components/Admin/AdminProductList"; // 管理者用商品一覧
 
 function App() {
   const navigate = useNavigate();
 
-  // 🔐 Get authentication information (from AuthContext)
+  // 🔐 AuthContextから認証情報を取得
   const {
-    user: mongoUser, // User data stored in MongoDB
-    loading: authLoading, // Whether Firebase authentication state is loading
-    isNewFirebaseUser, // Users who exist in Firebase but not yet in MongoDB
-    userName, // Display name (e.g., Firebase displayName)
+    user: mongoUser, // MongoDBに保存されているユーザー情報
+    loading: authLoading, // Firebase認証状態のロード中フラグ
+    isNewFirebaseUser, // Firebaseには存在するがMongoDBにまだ未登録のユーザー
+    userName, // 表示用ユーザー名（FirebaseのdisplayNameなど）
   } = useAuth();
 
   console.log("useAuth userName:", userName, "authLoading:", authLoading);
 
-  // 🔁 Flag to prevent duplicate registration (for StrictMode)
+  // 🔁 重複登録防止用のフラグ（React StrictMode対策）
   const isRegistering = useRef(false);
 
-  // 🔓 Logout process (sign out from Firebase)
+  // 🔓 ログアウト処理
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth); // Firebaseからサインアウト
       console.log("ログアウト成功");
-      navigate("/login"); // Redirect to the login page
+      navigate("/login"); // ログインページにリダイレクト
     } catch (error) {
       console.error("ログアウト失敗:", error);
     }
   };
 
-  // ✅ Register new Firebase users into MongoDB on first login
+  // ✅ Firebase新規ユーザーをMongoDBに登録（初回ログイン時のみ）
   useEffect(() => {
     if (!authLoading && isNewFirebaseUser && !isRegistering.current) {
       const registerUserToBackend = async () => {
         const firebaseUser = auth.currentUser;
         if (!firebaseUser) return;
 
-        isRegistering.current = true; // Prevent duplicate calls
+        isRegistering.current = true; // 重複呼び出し防止
         try {
-          const token = await getFreshToken(); // Get Firebase token
+          const token = await getFreshToken(); // 最新Firebaseトークンを取得
 
           await axios.post(
-            `${import.meta.env.VITE_API_URL}/users`, // 🔗 API endpoint for MongoDB
+            `${import.meta.env.VITE_API_URL}/users`, // MongoDB用APIエンドポイント
             {
               uid: firebaseUser.uid,
               name:
-                userName || // Optionally changed name
-                firebaseUser.displayName || // Firebase display name
-                firebaseUser.email.split("@")[0], // Fallback: prefix of email
+                userName || // 変更済みの名前
+                firebaseUser.displayName || // Firebase displayName
+                firebaseUser.email.split("@")[0], // メールの@前を名前として代用
               email: firebaseUser.email,
             },
             {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${token}`, // 🔑 認証トークンをヘッダーに付与
               },
             }
           );
@@ -117,30 +91,30 @@ function App() {
           }
         }
 
-        // Flag is not reset to prevent duplicate calls in React Strict Mode
+        // StrictModeではフラグをリセットせず、重複登録を防止
       };
 
       registerUserToBackend();
     }
   }, [authLoading, isNewFirebaseUser]);
 
-  // Display username and role (guest by default)
+  // 表示用ユーザー名と権限（デフォルトはゲスト）
   const displayName = userName || "ゲスト";
   const userRole = mongoUser?.role || "guest";
 
-  // 🧱 Define app-wide routing and layout
+  // 🧱 アプリ全体のルーティングとレイアウト
   return (
     <LoadingProvider>
       <Layout
-        userName={displayName} // 👤 Name shown in navigation
-        userRole={userRole} // 🛡️ Role: admin, user, etc.
-        handleLogout={handleLogout} // 🔓 Pass logout function to Layout
+        userName={displayName} // ナビゲーションに表示する名前
+        userRole={userRole} // 権限(admin, userなど)
+        handleLogout={handleLogout} // Layoutにログアウト関数を渡す
       >
         <Routes>
-          {/* 🏠 Home (product list) */}
+          {/* 🏠 ホーム（商品一覧） */}
           <Route path="/" element={<ProductList />} />
 
-          {/* ➕ Add product (requires authentication) */}
+          {/* ➕ 商品追加（認証必須） */}
           <Route
             path="/add"
             element={
@@ -150,7 +124,7 @@ function App() {
             }
           />
 
-          {/* 🧑‍💼 Profile page (requires authentication) */}
+          {/* 🧑‍💼 プロフィールページ（認証必須） */}
           <Route
             path="/profile"
             element={
@@ -160,7 +134,7 @@ function App() {
             }
           />
 
-          {/* 🛒 Cart page (requires authentication) */}
+          {/* 🛒 カートページ（認証必須） */}
           <Route
             path="/cart"
             element={
@@ -170,7 +144,7 @@ function App() {
             }
           />
 
-          {/* ✅ Order confirmation (requires authentication) */}
+          {/* ✅ 注文確認ページ（認証必須） */}
           <Route
             path="/confirm"
             element={
@@ -180,7 +154,7 @@ function App() {
             }
           />
 
-          {/* 🎉 Order completion (requires authentication) */}
+          {/* 🎉 注文完了ページ（認証必須） */}
           <Route
             path="/complete"
             element={
@@ -190,7 +164,7 @@ function App() {
             }
           />
 
-          {/* 🧾 My orders list (requires authentication) */}
+          {/* 🧾 自分の注文履歴（認証必須） */}
           <Route
             path="/my-orders"
             element={
@@ -200,7 +174,7 @@ function App() {
             }
           />
 
-          {/* 🛠️ Admin dashboard (requires authentication) */}
+          {/* 🛠️ 管理者ダッシュボード（認証必須） */}
           <Route
             path="/admin"
             element={
@@ -210,6 +184,7 @@ function App() {
             }
           />
 
+          {/* 🛒 管理者用商品一覧（認証必須） */}
           <Route
             path="/admin/products"
             element={
@@ -219,7 +194,7 @@ function App() {
             }
           />
 
-          {/* 📝 Edit product (requires authentication) */}
+          {/* 📝 商品編集ページ（認証必須） */}
           <Route
             path="/edit/:id"
             element={
@@ -229,20 +204,20 @@ function App() {
             }
           />
 
-          {/* ❤️ Favorites page (no authentication required) */}
+          {/* ❤️ お気に入りページ（認証不要） */}
           <Route path="/favorites" element={<Favorites />} />
 
-          {/* 🆕 Sign-up page (no authentication required) */}
+          {/* 🆕 新規登録ページ（認証不要） */}
           <Route path="/signup" element={<SignUp />} />
 
-          {/* 🔐 Login page (no authentication required) */}
+          {/* 🔐 ログインページ（認証不要） */}
           <Route path="/login" element={<Login />} />
 
-          {/* 🔍 Product details (no authentication required) */}
+          {/* 🔍 商品詳細ページ（認証不要） */}
           <Route path="/products/:id" element={<ProductDetail />} />
         </Routes>
       </Layout>
-      <ToastContainer />
+      <ToastContainer /> {/* トースト通知コンポーネント */}
     </LoadingProvider>
   );
 }

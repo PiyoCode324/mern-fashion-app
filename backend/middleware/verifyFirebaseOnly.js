@@ -1,38 +1,39 @@
 // middleware/verifyFirebaseOnly.js
-// 🔐 Middleware for validating Firebase ID tokens only
-// ※This middleware does not integrate with MongoDB; it only performs authentication checks using Firebase.
 
-const admin = require("firebase-admin"); // Use the initialized Firebase Admin SDK
+// 🔐 Firebase IDトークンの検証のみを行うミドルウェア
+// ※このミドルウェアは MongoDB との連携は行わず、Firebase 認証のみをチェックする
 
-// ✅ Middleware function to validate Firebase ID tokens
+const admin = require("firebase-admin"); // 初期化済みの Firebase Admin SDK を利用
+
+// ✅ Firebase IDトークンを検証するミドルウェア関数
 const verifyFirebaseOnly = async (req, res, next) => {
-  // 🔍 Retrieve the authorization information from the request header
+  // 🔍 リクエストヘッダーから Authorization 情報を取得
   const authHeader = req.headers.authorization;
 
-  // ⚠️ If the token is missing or doesn't start with "Bearer", the user is considered unauthenticated
+  // ⚠️ Authorization ヘッダーが存在しない、または "Bearer " で始まっていない場合は未認証として扱う
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // Extract the token part from "Bearer xxx"
+  // "Bearer xxx" の形式から、実際のトークン部分（xxx）を取り出す
   const token = authHeader.split(" ")[1];
 
   try {
-    // 🔍 Verify and decode the ID token using the Firebase Admin SDK
+    // 🔍 Firebase Admin SDK を使って IDトークンを検証・デコードする
     const decoded = await admin.auth().verifyIdToken(token);
 
-    // ✅ If the token is valid, attach the decoded user information to req.user
+    // ✅ トークンが有効であれば、デコードされたユーザー情報を req.user に保存
     console.log("✅ Firebase decoded user:", decoded);
     req.user = decoded;
 
-    // Proceed to the next middleware or route handler
+    // 次のミドルウェアまたはルートハンドラに処理を渡す
     next();
   } catch (error) {
-    // ❌ Token verification failed (e.g., expired, tampered with, or invalid token)
+    // ❌ トークンの検証に失敗（期限切れ・改ざん・無効トークンなど）の場合
     console.error("Firebase token verification failed:", error);
     return res.status(401).json({ error: "Invalid token" });
   }
 };
 
-// 📦 Export for use in other modules
+// 📦 他のモジュールで使用できるようにエクスポート
 module.exports = verifyFirebaseOnly;

@@ -1,44 +1,45 @@
 // src/main.jsx
-// React's StrictMode (helps detect potential problems during development)
+
+// React の StrictMode を利用（開発時に潜在的な問題を検出して警告してくれる）
 import { StrictMode } from "react";
 
-// API for creating a root in React 18+
+// React 18 以降でルートを作成するための API
 import { createRoot } from "react-dom/client";
 
-// Provides routing functionality using React Router
+// React Router を利用してルーティング機能を提供
 import { BrowserRouter } from "react-router-dom";
 
-// Context for managing favorite items
+// お気に入りアイテムの状態を管理する Context
 import { FavoriteProvider } from "./contexts/FavoriteContext";
 
-// Context for managing the shopping cart
+// ショッピングカートの状態を管理する Context
 import { CartProvider } from "./contexts/CartContext";
 
-// Context for managing authentication state
+// ユーザー認証（ログイン状態など）を管理する Context
 import { AuthProvider } from "./contexts/AuthContext";
 
-// Toast notification component (used to show feedback to users)
+// トースト通知（ユーザーにメッセージをポップアップ表示するコンポーネント）
 import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import toast styles
+import "react-toastify/dist/ReactToastify.css"; // トースト用のデフォルトスタイルを読み込む
 
-// Global styles and the main app component
+// グローバルスタイルとアプリのメインコンポーネント
 import "./index.css";
 import App from "./App.jsx";
 
-// 📌 Render the application into the root DOM element
+// 📌 アプリケーションを DOM の root 要素にレンダリングする
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    {/* 🌟 Manages the state of favorite items (e.g., heart icons) */}
+    {/* 🌟 お気に入り機能の状態管理（例：お気に入りボタンのオン/オフ） */}
     <FavoriteProvider>
-      {/* 🧭 Handles client-side routing and navigation */}
+      {/* 🧭 クライアントサイドのルーティング（ページ遷移を制御） */}
       <BrowserRouter>
-        {/* 🛒 Manages cart state (items, total amount, etc.) */}
+        {/* 🛒 カート機能の状態管理（商品リスト、合計金額など） */}
         <CartProvider>
-          {/* 🔐 Manages authentication state (logged-in user info, etc.) */}
+          {/* 🔐 認証状態の管理（ログインユーザー情報、権限など） */}
           <AuthProvider>
-            {/* 🧩 The main application component */}
+            {/* 🧩 アプリ全体のメインコンポーネント */}
             <App />
-            {/* 💬 Displays toast notifications (success, error messages, etc.) */}
+            {/* 💬 成功・エラー・情報メッセージをユーザーに通知 */}
             <ToastContainer />
           </AuthProvider>
         </CartProvider>

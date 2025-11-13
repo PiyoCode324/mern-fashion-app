@@ -6,7 +6,7 @@ import axios from "axios";
 
 const AuthContext = createContext(null);
 
-// Custom hook to easily access the AuthContext
+// ✅ 認証コンテキストを簡単に利用するためのカスタムフック
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
@@ -14,31 +14,31 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  // Firebase user object (authentication info)
+  // Firebase ユーザー情報（認証状態）
   const [firebaseUser, setFirebaseUser] = useState(null);
-  // User info from MongoDB (custom user data)
+  // MongoDB 側のユーザー情報（アプリ独自のデータ）
   const [user, setUser] = useState(null);
-  // Display name for the user; defaults to "ゲスト" if not logged in
+  // 表示用ユーザー名（ログインしていない場合は「ゲスト」）
   const [userName, setUserName] = useState("ゲスト");
-  // Firebase ID token (used for API authentication)
+  // Firebase IDトークン（API認証で利用）
   const [token, setToken] = useState(null);
-  // Loading state for authentication and user info
+  // 認証情報の読み込み中フラグ
   const [loading, setLoading] = useState(true);
-  // Indicates whether the Firebase
-  //  is new (not yet registered in MongoDB)
+  // Firebaseに存在するがMongoDBに未登録の新規ユーザーかどうか
   const [isNewFirebaseUser, setIsNewFirebaseUser] = useState(false);
 
   useEffect(() => {
-    // Listen for Firebase auth state changes
+    // 🔄 Firebase の認証状態を監視（ログイン／ログアウトの検知）
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Firebase 側のユーザーが存在する場合
         setFirebaseUser(firebaseUser);
 
         try {
-          // ★ Force token refresh to ensure updated custom claims
+          // 🔑 最新のカスタムクレームを反映するためにトークンを強制リフレッシュ
           const token = await firebaseUser.getIdToken(true);
 
-          // Debug log for development
+          // 📝 デバッグ用ログ（開発中に確認するため）
           console.log("🛡 Firebase User Info:");
           console.log("UID:", firebaseUser.uid);
           console.log("Email:", firebaseUser.email);
@@ -47,28 +47,29 @@ export const AuthProvider = ({ children }) => {
 
           setToken(token);
 
-          // Fetch user data from MongoDB API using the token
+          // MongoDB 側からユーザー情報を取得
           const res = await axios.get(
             `${import.meta.env.VITE_API_URL}/users/me`,
             {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${token}`, // 🔐 IDトークンをヘッダーに付与
               },
             }
           );
 
+          // 🎯 ユーザー情報を state に反映
           setUser(res.data);
           setUserName(res.data.name || "ゲスト");
           setIsNewFirebaseUser(false);
         } catch (error) {
-          // If user is not found in MongoDB, treat as a new Firebase user
+          // ❌ MongoDB に存在しない場合（新規ユーザー）
           if (error.response?.status === 404) {
             console.log("MongoDBに未登録のFirebaseユーザーです。");
             setUser(null);
             setUserName("ゲスト");
             setIsNewFirebaseUser(true);
           } else {
-            // Handle other errors and fall back to guest state
+            // その他のエラー → ゲスト扱いに戻す
             console.error("ユーザー情報取得エラー:", error);
             setUser(null);
             setUserName("ゲスト");
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }) => {
           setToken(null);
         }
       } else {
-        // Reset all state when user is logged out
+        // 🚪 ログアウト時の処理（全ての状態をリセット）
         setFirebaseUser(null);
         setUser(null);
         setUserName("ゲスト");
@@ -85,30 +86,31 @@ export const AuthProvider = ({ children }) => {
         setIsNewFirebaseUser(false);
       }
 
-      // Mark loading as complete
+      // ✅ 初期読み込み終了
       setLoading(false);
     });
 
-    // Clean up the listener on unmount
+    // 🧹 コンポーネントがアンマウントされた時にリスナーを解除
     return () => unsubscribe();
   }, []);
 
-  // Values to be shared via context
+  // コンテキスト経由で提供する値
   const value = {
-    firebaseUser,
-    user,
-    setUser,
-    userName,
-    setUserName,
-    token,
-    loadingAuth: loading,
-    isNewFirebaseUser,
+    firebaseUser, // Firebaseユーザー情報
+    user, // MongoDBユーザー情報
+    setUser, // ユーザー情報更新用
+    userName, // 表示名
+    setUserName, // 表示名更新用
+    token, // Firebase IDトークン
+    loadingAuth: loading, // 認証読み込み中フラグ
+    isNewFirebaseUser, // 新規Firebaseユーザー判定
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Show a loading indicator while authentication is initializing */}
+      {/* ⏳ 認証の初期化中はローディング表示、それ以外は子コンポーネントを表示 */}
       {!loading ? children : <div>Loading...</div>}
     </AuthContext.Provider>
   );
 };
+

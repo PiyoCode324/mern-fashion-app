@@ -3,6 +3,7 @@
 import React from "react";
 
 const AdminUserTable = ({ users, onRoleChange, onDelete }) => {
+  // 🔹 ユーザーが存在しない場合の表示
   if (!users || users.length === 0) {
     return (
       <p className="text-gray-800 dark:text-white">
@@ -13,8 +14,10 @@ const AdminUserTable = ({ users, onRoleChange, onDelete }) => {
 
   return (
     <section className="mb-10 text-gray-800 dark:text-white">
+      {/* 見出し */}
       <h2 className="text-2xl font-bold mb-4">ユーザー一覧</h2>
-      {/* ここに overflow-x-auto を追加 */}
+
+      {/* 横スクロール対応 */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border border-gray-300 dark:border-gray-600">
           <thead>
@@ -32,13 +35,17 @@ const AdminUserTable = ({ users, onRoleChange, onDelete }) => {
           <tbody>
             {users.map((user) => (
               <tr key={user._id} className="text-center">
+                {/* 🔹 ユーザーID表示 */}
                 <td className="border p-2 text-sm dark:border-gray-600">
                   {user.uid}
                 </td>
+                {/* 🔹 ユーザー名 */}
                 <td className="border p-2 dark:border-gray-600">{user.name}</td>
+                {/* 🔹 メールアドレス */}
                 <td className="border p-2 dark:border-gray-600">
                   {user.email}
                 </td>
+                {/* 🔹 管理者権限チェックボックス */}
                 <td className="border p-2 dark:border-gray-600">
                   <input
                     type="checkbox"
@@ -51,9 +58,11 @@ const AdminUserTable = ({ users, onRoleChange, onDelete }) => {
                     }
                   />
                 </td>
+                {/* 🔹 登録日 */}
                 <td className="border p-2 dark:border-gray-600">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
+                {/* 🔹 ユーザー削除ボタン */}
                 <td className="border p-2 dark:border-gray-600">
                   <button
                     onClick={() => {

@@ -1,21 +1,22 @@
 // src/contexts/CartContext.jsx (修正版)
 import { createContext, useContext, useEffect, useState } from "react";
 
-// Create a context for the cart
+// 🛒 カートの状態を共有するための Context を作成
 const CartContext = createContext(null);
 
-// Custom hook for easy access to the cart context
+// ✅ カスタムフック：CartContext を簡単に利用できるようにする
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
+    // CartProvider の内部でのみ利用可能
     throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 };
 
-// Component that wraps the entire app to provide cart state
+// 🌐 CartProvider コンポーネント：アプリ全体をラップしてカート機能を提供
 export const CartProvider = ({ children }) => {
-  // Initialize cart from localStorage; return empty array if parsing fails
+  // カートの初期状態を localStorage から取得（パースに失敗したら空配列）
   const [cartItems, setCartItems] = useState(() => {
     try {
       const saved = localStorage.getItem("cart");
@@ -26,61 +27,67 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  // Calculate total price of all items in the cart
+  // 💰 カート内商品の合計金額を計算
   const totalPrice = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  // Save cart to localStorage whenever it updates
+  // 📝 cartItems が更新されるたびに localStorage に保存
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // Add a product to the cart (or increase quantity if it already exists)
+  // ➕ 商品をカートに追加（すでに存在する場合は数量を増やす）
   const addToCart = (product) => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item._id === product._id);
       if (existingItem) {
-        // If item exists, increase quantity by 1
+        // すでに存在する場合 → 数量を 1 増やす
         return prev.map((item) =>
           item._id === product._id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        // If item is new, add with quantity 1
+        // 初めて追加する場合 → 数量を 1 で追加
         return [...prev, { ...product, quantity: 1 }];
       }
     });
   };
 
-  // Remove a product from the cart (decrease quantity or remove completely)
+  // ➖ 商品をカートから削除（数量を減らす or 完全に削除）
   const removeFromCart = (productId) => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item._id === productId);
-      if (!existingItem) return prev;
+      if (!existingItem) return prev; // 該当商品がない場合はそのまま
 
       if (existingItem.quantity > 1) {
-        // Decrease quantity by 1
+        // 数量が 2 以上 → 数量を 1 減らす
         return prev.map((item) =>
           item._id === productId
             ? { ...item, quantity: item.quantity - 1 }
             : item
         );
       } else {
-        // If quantity is 1, remove the item completely
+        // 数量が 1 → 商品自体を削除
         return prev.filter((item) => item._id !== productId);
       }
     });
   };
 
-  // Clear all items from the cart
+  // ❌ カートを完全に空にする
   const clearCart = () => setCartItems([]);
 
   return (
     <CartContext.Provider
-      value={{ cartItems, addToCart, removeFromCart, clearCart, totalPrice }} // Share totalPrice via context
+      value={{
+        cartItems, // カート内の商品一覧
+        addToCart, // 商品追加
+        removeFromCart, // 商品削除
+        clearCart, // カートクリア
+        totalPrice, // 合計金額
+      }}
     >
       {children}
     </CartContext.Provider>

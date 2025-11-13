@@ -6,47 +6,51 @@ import ProductCard from "../components/ProductCard";
 import { useFavorite } from "../contexts/FavoriteContext";
 
 const Favorites = () => {
-  // Get favorite product IDs from context
+  // useFavorite カスタムフックからお気に入り商品のID配列を取得
   const { favorites } = useFavorite();
 
-  // Store detailed favorite product data
+  // お気に入り商品の詳細情報を格納するステート
   const [products, setProducts] = useState([]);
-  // Manage loading state
+  // データ読み込み中かどうかを管理するステート
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If favorites is undefined, do nothing
+    // favorites が undefined の場合は処理を中断
     if (!favorites) return;
 
-    // If no favorites, clear products and stop loading
+    // favorites 配列が空の場合、products を空にして読み込み状態を解除
     if (favorites.length === 0) {
       setProducts([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    // Fetch all products and filter by favorite IDs
+    setLoading(true); // データ取得開始時にローディング状態にする
+
+    // 全商品のデータを取得して、お気に入りに含まれるものだけを抽出
     axios
       .get(`${import.meta.env.VITE_API_URL}/products`)
       .then((res) => {
+        // 取得した商品リストから favorites に含まれるものだけフィルター
         const filtered = res.data.filter((product) =>
           favorites.includes(product._id)
         );
-        setProducts(filtered);
+        setProducts(filtered); // フィルターした結果を products にセット
       })
       .catch((err) => {
+        // データ取得失敗時はコンソールにエラーを表示し、products を空にリセット
         console.error("Error fetching favorite products:", err);
-        setProducts([]); // Reset to empty on error
+        setProducts([]);
       })
       .finally(() => {
+        // 成功・失敗いずれも処理完了後にローディングを解除
         setLoading(false);
       });
-  }, [favorites]);
+  }, [favorites]); // favorites が更新されるたびに実行
 
   return (
     <div className="p-4">
-      {/* Back to home link */}
+      {/* ホームページへのリンク */}
       <div className="mb-6">
         <Link
           to="/"
@@ -56,22 +60,22 @@ const Favorites = () => {
         </Link>
       </div>
 
-      {/* Favorites title */}
+      {/* ページタイトル */}
       <h2 className="text-2xl font-bold mb-4">❤️ お気に入り一覧</h2>
 
       {loading ? (
-        // Loading message
+        // ローディング中の表示
         <p>お気に入りの商品を読み込み中です...</p>
       ) : (
         <>
           {favorites.length === 0 ? (
-            // Message when no favorites are set
+            // お気に入りが登録されていない場合の表示
             <p>お気に入りが登録されていません。</p>
           ) : products.length === 0 ? (
-            // Message when no matching products are found (e.g. deleted)
+            // favorites にIDはあるが、該当する商品が存在しない場合（削除済みなど）
             <p>該当するお気に入りの商品が見つかりませんでした。</p>
           ) : (
-            // Display product cards in grid
+            // お気に入り商品が存在する場合は ProductCard をグリッド表示
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {products.map((product) => (
                 <Link key={product._id} to={`/products/${product._id}`}>
